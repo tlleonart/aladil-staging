@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2026-01-23
+
+### Added
+- **Supabase Storage Integration**
+  - Added `@supabase/supabase-js` client for asset uploads
+  - Created `scripts/upload-assets.ts` for uploading member photos to Supabase Storage
+  - Executive committee member photos now display from Supabase Storage
+
+- **Executive Member Photos**
+  - Uploaded photos for all 4 executive committee members
+  - Photos sourced from aladil-web production site
+  - Assets stored in `assets` bucket with `members/` prefix
+
+### Infrastructure
+- New script: `npx tsx scripts/upload-assets.ts` for asset management
+
+---
+
 ## [0.4.0] - 2026-01-23
 
 ### Fixed
