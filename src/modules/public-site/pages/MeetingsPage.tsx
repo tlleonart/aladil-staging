@@ -1,19 +1,26 @@
-"use client";
+import { Calendar, MapPin } from "lucide-react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { prisma } from "@/modules/core/db";
 
-import { Calendar, Loader2 } from "lucide-react";
-import { useQuery } from "@/modules/core/orpc";
-import { orpc } from "@/modules/core/orpc/client";
-import { MeetingCard } from "../components/MeetingCard";
-
-export const MeetingsPage = () => {
-  const {
-    data: meetings,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["meetings", "listPublished"],
-    queryFn: () => orpc.meetings.listPublished({ limit: 50 }),
+// Fetch published meetings
+async function getMeetings() {
+  const meetings = await prisma.meeting.findMany({
+    where: { status: "PUBLISHED" },
+    orderBy: { number: "desc" },
+    take: 50,
+    include: {
+      coverAsset: true,
+      hostLab: { select: { id: true, name: true } },
+    },
   });
+
+  return meetings;
+}
+
+export const MeetingsPage = async () => {
+  const meetings = await getMeetings();
 
   return (
     <div className="bg-white">
@@ -54,43 +61,64 @@ export const MeetingsPage = () => {
           </div>
 
           {/* Meetings Grid */}
-          {isLoading && (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-              <span className="ml-3 text-gray-600">Cargando reuniones...</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="text-center py-20">
-              <p className="text-red-600">
-                Error al cargar las reuniones. Por favor intente de nuevo.
-              </p>
-            </div>
-          )}
-
-          {meetings && meetings.length === 0 && (
+          {meetings.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-gray-600">
                 No hay reuniones publicadas en este momento.
               </p>
             </div>
-          )}
-
-          {meetings && meetings.length > 0 && (
+          ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {meetings.map((meeting) => (
-                <MeetingCard
-                  key={meeting.id}
-                  number={meeting.number}
-                  title={meeting.title}
-                  slug={meeting.slug}
-                  city={meeting.city}
-                  country={meeting.country}
-                  startDate={meeting.startDate}
-                  endDate={meeting.endDate}
-                  status={meeting.status}
-                />
+                <Link key={meeting.id} href={`/meetings/${meeting.slug}`}>
+                  <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
+                    <div className="aspect-video bg-gray-100 rounded-t-xl overflow-hidden">
+                      {meeting.coverAsset ? (
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${meeting.coverAsset.bucket}/${meeting.coverAsset.path}`}
+                          alt={meeting.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
+                          <Calendar className="h-12 w-12 text-blue-400" />
+                        </div>
+                      )}
+                    </div>
+                    <CardHeader>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="secondary">
+                          Reunion #{meeting.number}
+                        </Badge>
+                      </div>
+                      <CardTitle className="text-lg group-hover:text-blue-600 transition-colors line-clamp-2">
+                        {meeting.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col gap-2 text-sm text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          <span>
+                            {meeting.city}, {meeting.country}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            {new Date(meeting.startDate).toLocaleDateString(
+                              "es-ES",
+                              {
+                                year: "numeric",
+                                month: "long",
+                              },
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           )}
@@ -98,7 +126,7 @@ export const MeetingsPage = () => {
       </section>
 
       {/* Stats Section */}
-      {meetings && meetings.length > 0 && (
+      {meetings.length > 0 && (
         <section className="py-16 md:py-20 bg-gray-50">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid sm:grid-cols-3 gap-8 text-center">

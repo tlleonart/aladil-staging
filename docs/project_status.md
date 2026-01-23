@@ -55,6 +55,8 @@
 | SEO: sitemap.xml (dynamic) | Done |
 | SEO: robots.txt | Done |
 | Real logo in Header/Footer | Done |
+| Fix routing (remove default page.tsx) | Done |
+| Convert public pages to Server Components | Done |
 
 ---
 

@@ -1,19 +1,30 @@
-"use client";
+import { Calendar, Newspaper } from "lucide-react";
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { prisma } from "@/modules/core/db";
 
-import { Loader2, Newspaper } from "lucide-react";
-import { useQuery } from "@/modules/core/orpc";
-import { orpc } from "@/modules/core/orpc/client";
-import { NewsCard } from "../components/NewsCard";
-
-export const NewsPage = () => {
-  const {
-    data: posts,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["news", "listPublished"],
-    queryFn: () => orpc.news.listPublished({ limit: 50 }),
+// Fetch published news
+async function getNews() {
+  const news = await prisma.newsPost.findMany({
+    where: { status: "PUBLISHED" },
+    orderBy: { publishedAt: "desc" },
+    take: 50,
+    include: {
+      coverAsset: true,
+    },
   });
+
+  return news;
+}
+
+export const NewsPage = async () => {
+  const news = await getNews();
 
   return (
     <div className="bg-white">
@@ -51,67 +62,59 @@ export const NewsPage = () => {
             </p>
           </div>
 
-          {/* Loading State */}
-          {isLoading && (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-              <span className="ml-3 text-gray-600">Cargando noticias...</span>
-            </div>
-          )}
-
-          {/* Error State */}
-          {error && (
-            <div className="text-center py-20">
-              <p className="text-red-600">
-                Error al cargar las noticias. Por favor intente de nuevo.
-              </p>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {posts && posts.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
-                <svg
-                  className="w-16 h-16 mx-auto"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                No hay noticias disponibles
-              </h3>
-              <p className="text-gray-500">
-                Vuelve pronto para ver las ultimas novedades.
-              </p>
-            </div>
-          )}
-
           {/* News Grid */}
-          {posts && posts.length > 0 && (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {posts.map((post) => (
-                <NewsCard
-                  key={post.id}
-                  title={post.title}
-                  slug={post.slug}
-                  excerpt={post.excerpt}
-                  publishedAt={post.publishedAt}
-                  authorName={post.author?.name}
-                  coverUrl={
-                    post.coverAsset
-                      ? `/api/storage/${post.coverAsset.bucket}/${post.coverAsset.path}`
-                      : null
-                  }
-                />
+          {news.length === 0 ? (
+            <div className="text-center py-20">
+              <Newspaper className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-600">
+                No hay noticias publicadas en este momento.
+              </p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {news.map((post) => (
+                <Link key={post.id} href={`/news/${post.slug}`}>
+                  <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
+                    <div className="aspect-video bg-gray-100 rounded-t-xl overflow-hidden">
+                      {post.coverAsset ? (
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${post.coverAsset.bucket}/${post.coverAsset.path}`}
+                          alt={post.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
+                          <Newspaper className="h-12 w-12 text-blue-400" />
+                        </div>
+                      )}
+                    </div>
+                    <CardHeader>
+                      <CardTitle className="text-lg group-hover:text-blue-600 transition-colors line-clamp-2">
+                        {post.title}
+                      </CardTitle>
+                      {post.publishedAt && (
+                        <CardDescription className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          {new Date(post.publishedAt).toLocaleDateString(
+                            "es-ES",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            },
+                          )}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                    {post.excerpt && (
+                      <CardContent>
+                        <p className="text-gray-600 text-sm line-clamp-3">
+                          {post.excerpt}
+                        </p>
+                      </CardContent>
+                    )}
+                  </Card>
+                </Link>
               ))}
             </div>
           )}

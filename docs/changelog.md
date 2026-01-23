@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-01-23
+
+### Fixed
+- **Home Page Routing**: Removed default Next.js `src/app/page.tsx` that was overriding the public site home page
+- **Public Pages Data Loading**: Converted public pages from Client Components with ORPC to Server Components with direct Prisma queries for reliable data loading
+  - `MeetingsPage` - Now loads meetings server-side
+  - `NewsPage` - Now loads news posts server-side
+  - `ExecutivePage` - Now loads executive members server-side
+  - `LaboratoriesPage` - Hybrid approach: Server-side data fetching with client-side interactive map
+
+### Changed
+- Public pages now use Server Components for better performance and SEO
+- `LaboratoriesContent` extracted as client component for Leaflet map interactivity
+- Data transformation moved to server-side for cleaner client components
+
+---
+
 ## [0.3.0] - 2026-01-23
 
 ### Added

@@ -1,18 +1,25 @@
-"use client";
+import { Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { prisma } from "@/modules/core/db";
 
-import { Loader2 } from "lucide-react";
-import { orpc, useQuery } from "@/modules/core/orpc";
-import { ExecutiveCard } from "../components/ExecutiveCard";
-
-export const ExecutivePage = () => {
-  const {
-    data: members,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["executive", "listPublic"],
-    queryFn: () => orpc.executive.listPublic({ limit: 50 }),
+// Fetch active executive members
+async function getExecutiveMembers() {
+  const members = await prisma.executiveMember.findMany({
+    where: { isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { fullName: "asc" }],
+    take: 50,
+    include: {
+      lab: { select: { id: true, name: true } },
+      photoAsset: true,
+    },
   });
+
+  return members;
+}
+
+export const ExecutivePage = async () => {
+  const members = await getExecutiveMembers();
 
   return (
     <div className="bg-white">
@@ -66,52 +73,50 @@ export const ExecutivePage = () => {
             </p>
           </div>
 
-          {/* Loading State */}
-          {isLoading && (
-            <div className="flex justify-center items-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-              <span className="ml-3 text-gray-600">Cargando miembros...</span>
-            </div>
-          )}
-
-          {/* Error State */}
-          {error && (
-            <div className="text-center py-20">
-              <p className="text-red-600">
-                Error al cargar los miembros del comite ejecutivo.
-              </p>
-              <p className="text-gray-500 mt-2">
-                Por favor, intenta de nuevo mas tarde.
-              </p>
-            </div>
-          )}
-
           {/* Empty State */}
-          {!isLoading && !error && members?.length === 0 && (
+          {members.length === 0 ? (
             <div className="text-center py-20">
+              <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-600">
                 No hay miembros del comite ejecutivo disponibles en este
                 momento.
               </p>
             </div>
-          )}
-
-          {/* Members Grid */}
-          {!isLoading && !error && members && members.length > 0 && (
+          ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {members.map((member) => (
-                <ExecutiveCard
+                <Card
                   key={member.id}
-                  fullName={member.fullName}
-                  position={member.position}
-                  countryCode={member.countryCode}
-                  labName={member.lab?.name}
-                  photoUrl={
-                    member.photoAsset
-                      ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${member.photoAsset.bucket}/${member.photoAsset.path}`
-                      : undefined
-                  }
-                />
+                  className="text-center hover:shadow-md transition-shadow"
+                >
+                  <CardHeader className="pb-2">
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden bg-gray-100">
+                      {member.photoAsset ? (
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${member.photoAsset.bucket}/${member.photoAsset.path}`}
+                          alt={member.fullName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
+                          <Users className="h-10 w-10 text-blue-400" />
+                        </div>
+                      )}
+                    </div>
+                    <CardTitle className="text-lg">{member.fullName}</CardTitle>
+                    <p className="text-blue-600 font-medium">
+                      {member.position}
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    {member.lab && (
+                      <p className="text-sm text-gray-500">{member.lab.name}</p>
+                    )}
+                    <Badge variant="outline" className="mt-2">
+                      {member.countryCode}
+                    </Badge>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
