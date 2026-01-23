@@ -1,0 +1,432 @@
+// schema.prisma — ALADIL (full initial)
+// Target: Supabase Postgres
+// Contract-first: treat this file as source of truth for ClaudeCode.
+// Prefer additive migrations after first deploy.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+//
+// Enums
+//
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AssetType {
+  IMAGE
+  PDF
+  OTHER
+}
+
+enum ProjectKey {
+  INTRANET
+  NEWS
+  MEETINGS
+  LABS
+  EXEC_COMMITTEE
+  SETTINGS
+}
+
+//
+// Auth (credentials) + Multi-project RBAC
+//
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String   // Required by Better Auth
+  emailVerified Boolean  @default(false) // Required by Better Auth
+  image         String?  // Optional for Better Auth
+  isActive      Boolean  @default(true)
+
+  // Optional global bypass for ops
+  isSuperAdmin  Boolean  @default(false)
+
+  // Better Auth relations
+  accounts       Account[]
+  sessions       Session[]
+
+  // App relations
+  auditEvents    AuditEvent[]
+
+  // RBAC memberships (role per project)
+  memberships    UserProjectRole[]
+
+  // authored content (intranet authorship)
+  newsPosts      NewsPost[] @relation("NewsAuthor")
+  meetings       Meeting[]  @relation("MeetingAuthor")
+
+  // assets uploaded by user
+  uploadedAssets Asset[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([isSuperAdmin])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  token     String   @unique // Better Auth session token
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Better Auth Account model (for credential storage)
+model Account {
+  id                    String    @id @default(uuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String
+  providerId            String    // "credential" for email/password
+  password              String?   // Hashed password for credentials
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+// Better Auth Verification model (for email verification, etc.)
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+//
+// RBAC: Project -> Role -> Permission
+//
+model Project {
+  id          String     @id @default(uuid())
+  key         ProjectKey @unique
+  name        String
+  description String?
+  isActive    Boolean    @default(true)
+
+  roles       Role[]
+  memberships UserProjectRole[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // e.g. "admin", "editor", "reader" (scoped to project)
+  key         String
+  name        String
+  description String?
+  isSystem    Boolean  @default(true)
+
+  permissions RolePermission[]
+  members     UserProjectRole[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([projectId, key])
+  @@index([projectId])
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+
+  // Convention: "news.create", "meetings.publish", "users.manage"
+  key         String  @unique
+  description String?
+
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  id           String      @id @default(uuid())
+  roleId       String
+  role         Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  permissionId String
+  permission   Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model UserProjectRole {
+  id        String   @id @default(uuid())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Simple rule: 1 role per user per project
+  @@unique([userId, projectId])
+  @@index([userId, isActive])
+  @@index([projectId, isActive])
+  @@index([roleId])
+}
+
+//
+// Business entities
+//
+
+// Socios / Laboratorios miembros
+model Lab {
+  id          String  @id @default(uuid())
+  name        String
+  countryCode String  // e.g. "AR", "UY"
+  city        String?
+  websiteUrl  String?
+  isActive    Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  logoAssetId String?
+  logoAsset   Asset?  @relation("LabLogo", fields: [logoAssetId], references: [id], onDelete: SetNull)
+
+  executiveMembers ExecutiveMember[]
+  hostedMeetings   Meeting[] @relation("HostLab")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([countryCode])
+  @@index([isActive, sortOrder])
+}
+
+// Comite Ejecutivo (personas)
+model ExecutiveMember {
+  id          String  @id @default(uuid())
+  fullName    String
+  position    String  // "Presidente", "Vice Presidente", etc.
+  countryCode String
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+
+  labId       String?
+  lab         Lab?    @relation(fields: [labId], references: [id], onDelete: SetNull)
+
+  photoAssetId String?
+  photoAsset   Asset? @relation("ExecPhoto", fields: [photoAssetId], references: [id], onDelete: SetNull)
+
+  // Optional if you ever want custom flags, otherwise derive from countryCode in UI
+  flagAssetId  String?
+  flagAsset    Asset? @relation("ExecFlag", fields: [flagAssetId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([countryCode])
+  @@index([isActive, sortOrder])
+}
+
+// Reuniones (listado + detalle + PDF + imagenes)
+model Meeting {
+  id          String   @id @default(uuid())
+  number      Int      // e.g. 36
+  title       String   // e.g. "Reunion #36 | Santa Cruz de la Sierra, Bolivia"
+  slug        String   @unique
+
+  city        String
+  country     String
+  countryCode String
+
+  startDate   DateTime
+  endDate     DateTime?
+
+  hostName    String?
+  hostLabId   String?
+  hostLab     Lab?     @relation("HostLab", fields: [hostLabId], references: [id], onDelete: SetNull)
+
+  // content
+  summary     String?
+  content     Json?    // rich text editor output (TipTap/Slate/etc.)
+
+  status      ContentStatus @default(PUBLISHED)
+
+  // media
+  coverAssetId      String?
+  coverAsset        Asset?  @relation("MeetingCover", fields: [coverAssetId], references: [id], onDelete: SetNull)
+
+  topicsPdfAssetId  String?
+  topicsPdfAsset    Asset?  @relation("MeetingTopicsPdf", fields: [topicsPdfAssetId], references: [id], onDelete: SetNull)
+
+  gallery     MeetingAsset[]
+
+  // author (intranet user)
+  authorId    String?
+  author      User?    @relation("MeetingAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime?
+
+  @@index([status, publishedAt])
+  @@index([countryCode, startDate])
+  @@index([number])
+}
+
+model MeetingAsset {
+  id        String  @id @default(uuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  assetId   String
+  asset     Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@unique([meetingId, assetId])
+  @@index([meetingId, sortOrder])
+}
+
+// Noticias (nuevo modulo)
+model NewsPost {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  excerpt     String?
+  content     Json?         // rich text
+  status      ContentStatus @default(DRAFT)
+
+  coverAssetId String?
+  coverAsset   Asset?       @relation("NewsCover", fields: [coverAssetId], references: [id], onDelete: SetNull)
+
+  attachments  NewsAsset[]
+
+  authorId     String?
+  author       User?        @relation("NewsAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime?
+
+  @@index([status, publishedAt])
+}
+
+// Join table for attachments
+model NewsAsset {
+  id         String   @id @default(uuid())
+  newsPostId String
+  newsPost   NewsPost @relation(fields: [newsPostId], references: [id], onDelete: Cascade)
+
+  assetId    String
+  asset      Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@unique([newsPostId, assetId])
+  @@index([newsPostId, sortOrder])
+}
+
+// Assets (Supabase Storage-backed)
+model Asset {
+  id        String    @id @default(uuid())
+  type      AssetType
+  bucket    String    // Supabase bucket name
+  path      String    // object path inside bucket
+  filename  String
+  mimeType  String?
+  sizeBytes Int?
+
+  // optional metadata for images
+  width     Int?
+  height    Int?
+
+  uploadedById String?
+  uploadedBy   User?   @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  // Reverse relations
+  labLogos         Lab[]             @relation("LabLogo")
+  execPhotos       ExecutiveMember[] @relation("ExecPhoto")
+  execFlags        ExecutiveMember[] @relation("ExecFlag")
+  meetingCovers    Meeting[]         @relation("MeetingCover")
+  meetingTopicsPdfs Meeting[]        @relation("MeetingTopicsPdf")
+  newsCovers       NewsPost[]        @relation("NewsCover")
+  meetingAssets    MeetingAsset[]
+  newsAssets       NewsAsset[]
+
+  @@unique([bucket, path])
+  @@index([type])
+  @@index([uploadedById])
+}
+
+// Contact form submissions (optional but useful)
+model ContactMessage {
+  id        String  @id @default(uuid())
+  name      String
+  email     String
+  message   String
+
+  // simple moderation lifecycle
+  status    String  @default("NEW") // NEW | READ | ARCHIVED
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Basic audit log (helps with admin actions)
+model AuditEvent {
+  id       String   @id @default(uuid())
+  userId   String?
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  action   String   // e.g. "NEWS_CREATE", "MEETING_UPDATE", "USER_ROLE_CHANGE"
+  entity   String?  // e.g. "NewsPost"
+  entityId String?  // target id
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action])
+}

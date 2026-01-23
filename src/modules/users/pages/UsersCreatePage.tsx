@@ -1,0 +1,40 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { orpc } from "@/modules/core/orpc/client";
+import { useMutation, useQueryClient } from "@/modules/core/orpc/react";
+import { UsersForm } from "../components";
+import type { CreateUser } from "../schemas";
+
+export function UsersCreatePage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const createMutation = useMutation({
+    mutationFn: (data: CreateUser) => orpc.users.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      router.push("/admin/users");
+    },
+  });
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Add New User</h1>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>User Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <UsersForm
+            onSubmit={(data) => createMutation.mutate(data as CreateUser)}
+            isLoading={createMutation.isPending}
+            submitLabel="Create User"
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
