@@ -7,16 +7,27 @@ All notable changes to this project will be documented in this file.
 ### Added
 - **Supabase Storage Integration**
   - Added `@supabase/supabase-js` client for asset uploads
-  - Created `scripts/upload-assets.ts` for uploading member photos to Supabase Storage
-  - Executive committee member photos now display from Supabase Storage
+  - Created `scripts/upload-assets.ts` for member photos
+  - Created `scripts/upload-all-assets.ts` for comprehensive asset management
+  - All assets now served from Supabase Storage
 
-- **Executive Member Photos**
-  - Uploaded photos for all 4 executive committee members
-  - Photos sourced from aladil-web production site
-  - Assets stored in `assets` bucket with `members/` prefix
+- **Executive Member Photos** (4 members)
+  - Fabián Fay, Milton Fornella, Giancarlo Sanguinetti, Paulo Díaz Meyer
+
+- **Laboratory Logos** (7 labs)
+  - Cibic, LAC, Amadita, Meyer Lab, LABIN, Biotest, Biomédica de Referencia
+
+- **Meeting Covers** (8 meetings)
+  - Covers for meetings #30-#37 (Rosario, Montevideo, Asunción, Santa Cruz, Guatemala, etc.)
+
+- **General Assets**
+  - Logo, history image, about background, hero banner
+  - Country flags (AR, DO, PY, UY)
+  - Meeting PDF (Asunción topics)
 
 ### Infrastructure
-- New script: `npx tsx scripts/upload-assets.ts` for asset management
+- Scripts: `upload-assets.ts`, `upload-all-assets.ts`
+- Total: 28 assets uploaded to Supabase Storage
 
 ---
 
