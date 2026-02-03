@@ -31,14 +31,14 @@ export function getLabsColumns({
   return [
     {
       accessorKey: "name",
-      header: "Name",
+      header: "Nombre",
       cell: ({ row }) => (
         <div className="font-medium">{row.getValue("name")}</div>
       ),
     },
     {
       accessorKey: "countryCode",
-      header: "Country",
+      header: "País",
       cell: ({ row }) => {
         const lab = row.original;
         return (
@@ -51,7 +51,7 @@ export function getLabsColumns({
     },
     {
       accessorKey: "websiteUrl",
-      header: "Website",
+      header: "Sitio Web",
       cell: ({ row }) => {
         const url = row.getValue("websiteUrl") as string | null;
         if (!url) return <span className="text-muted-foreground">-</span>;
@@ -69,19 +69,19 @@ export function getLabsColumns({
     },
     {
       accessorKey: "isActive",
-      header: "Status",
+      header: "Estado",
       cell: ({ row }) => {
         const isActive = row.getValue("isActive") as boolean;
         return (
           <Badge variant={isActive ? "default" : "secondary"}>
-            {isActive ? "Active" : "Inactive"}
+            {isActive ? "Activo" : "Inactivo"}
           </Badge>
         );
       },
     },
     {
       accessorKey: "sortOrder",
-      header: "Order",
+      header: "Orden",
     },
     {
       id: "actions",
@@ -92,7 +92,7 @@ export function getLabsColumns({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Abrir menú</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -100,19 +100,19 @@ export function getLabsColumns({
               <DropdownMenuItem asChild>
                 <Link href={`/admin/labs/${lab.id}`}>
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit
+                  Editar
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onToggleActive(lab.id)}>
                 {lab.isActive ? (
                   <>
                     <ToggleLeft className="mr-2 h-4 w-4" />
-                    Deactivate
+                    Desactivar
                   </>
                 ) : (
                   <>
                     <ToggleRight className="mr-2 h-4 w-4" />
-                    Activate
+                    Activar
                   </>
                 )}
               </DropdownMenuItem>
@@ -121,7 +121,7 @@ export function getLabsColumns({
                 onClick={() => onDelete(lab.id)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete
+                Eliminar
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

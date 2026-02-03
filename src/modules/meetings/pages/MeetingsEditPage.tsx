@@ -34,11 +34,11 @@ export function MeetingsEditPage({ id }: MeetingsEditPageProps) {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Cargando...</div>;
   }
 
   if (!meeting) {
-    return <div>Meeting not found</div>;
+    return <div>Reunión no encontrada</div>;
   }
 
   // Format dates for the form
@@ -50,11 +50,11 @@ export function MeetingsEditPage({ id }: MeetingsEditPageProps) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Edit Meeting</h1>
+      <h1 className="text-2xl font-bold">Editar Reunión</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Meeting Details</CardTitle>
+          <CardTitle>Detalles de la Reunión</CardTitle>
         </CardHeader>
         <CardContent>
           <MeetingsForm
@@ -77,7 +77,7 @@ export function MeetingsEditPage({ id }: MeetingsEditPageProps) {
             }}
             onSubmit={(data) => updateMutation.mutate(data)}
             isLoading={updateMutation.isPending}
-            submitLabel="Update Meeting"
+            submitLabel="Actualizar Reunión"
           />
         </CardContent>
       </Card>

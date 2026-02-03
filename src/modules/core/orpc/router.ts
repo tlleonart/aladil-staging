@@ -1,3 +1,4 @@
+import { assetsRouter } from "@/modules/assets/server/router";
 import { contactRouter } from "@/modules/contact/server/router";
 import { executiveRouter } from "@/modules/executive/server/router";
 import { labsRouter } from "@/modules/labs/server/router";
@@ -14,6 +15,7 @@ const health = publicProcedure.handler(async () => {
 // App router - combines all feature routers
 export const appRouter = {
   health,
+  assets: assetsRouter,
   news: newsRouter,
   meetings: meetingsRouter,
   labs: labsRouter,

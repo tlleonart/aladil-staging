@@ -41,27 +41,27 @@ export function getNewsColumns({
   return [
     {
       accessorKey: "title",
-      header: "Title",
+      header: "Título",
       cell: ({ row }) => (
         <div className="font-medium">{row.getValue("title")}</div>
       ),
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: "Estado",
       cell: ({ row }) => <StatusBadge status={row.getValue("status")} />,
     },
     {
       accessorKey: "author",
-      header: "Author",
+      header: "Autor",
       cell: ({ row }) => {
         const author = row.original.author;
-        return author?.name || author?.email || "Unknown";
+        return author?.name || author?.email || "Desconocido";
       },
     },
     {
       accessorKey: "createdAt",
-      header: "Created",
+      header: "Creado",
       cell: ({ row }) => {
         const date = new Date(row.getValue("createdAt"));
         return date.toLocaleDateString();
@@ -78,7 +78,7 @@ export function getNewsColumns({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Abrir menú</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -86,19 +86,19 @@ export function getNewsColumns({
               <DropdownMenuItem asChild>
                 <Link href={`/admin/news/${post.id}`}>
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit
+                  Editar
                 </Link>
               </DropdownMenuItem>
               {isDraft && (
                 <DropdownMenuItem onClick={() => onPublish(post.id)}>
                   <Eye className="mr-2 h-4 w-4" />
-                  Publish
+                  Publicar
                 </DropdownMenuItem>
               )}
               {isPublished && (
                 <DropdownMenuItem onClick={() => onArchive(post.id)}>
                   <Archive className="mr-2 h-4 w-4" />
-                  Archive
+                  Archivar
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
@@ -106,7 +106,7 @@ export function getNewsColumns({
                 onClick={() => onDelete(post.id)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete
+                Eliminar
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

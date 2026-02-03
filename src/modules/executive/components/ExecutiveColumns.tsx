@@ -45,22 +45,22 @@ export function getExecutiveColumns({
   return [
     {
       accessorKey: "fullName",
-      header: "Name",
+      header: "Nombre",
       cell: ({ row }) => (
         <div className="font-medium">{row.getValue("fullName")}</div>
       ),
     },
     {
       accessorKey: "position",
-      header: "Position",
+      header: "Cargo",
     },
     {
       accessorKey: "countryCode",
-      header: "Country",
+      header: "País",
     },
     {
       accessorKey: "lab",
-      header: "Laboratory",
+      header: "Laboratorio",
       cell: ({ row }) => {
         const lab = row.original.lab;
         return lab ? (
@@ -72,19 +72,19 @@ export function getExecutiveColumns({
     },
     {
       accessorKey: "isActive",
-      header: "Status",
+      header: "Estado",
       cell: ({ row }) => {
         const isActive = row.getValue("isActive") as boolean;
         return (
           <Badge variant={isActive ? "default" : "secondary"}>
-            {isActive ? "Active" : "Inactive"}
+            {isActive ? "Activo" : "Inactivo"}
           </Badge>
         );
       },
     },
     {
       accessorKey: "sortOrder",
-      header: "Order",
+      header: "Orden",
     },
     {
       id: "actions",
@@ -95,7 +95,7 @@ export function getExecutiveColumns({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Abrir menú</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -103,19 +103,19 @@ export function getExecutiveColumns({
               <DropdownMenuItem asChild>
                 <Link href={`/admin/executive/${member.id}`}>
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit
+                  Editar
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onToggleActive(member.id)}>
                 {member.isActive ? (
                   <>
                     <ToggleLeft className="mr-2 h-4 w-4" />
-                    Deactivate
+                    Desactivar
                   </>
                 ) : (
                   <>
                     <ToggleRight className="mr-2 h-4 w-4" />
-                    Activate
+                    Activar
                   </>
                 )}
               </DropdownMenuItem>
@@ -124,7 +124,7 @@ export function getExecutiveColumns({
                 onClick={() => onDelete(member.id)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete
+                Eliminar
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

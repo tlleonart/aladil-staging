@@ -34,14 +34,14 @@ export function getUsersColumns({
   return [
     {
       accessorKey: "email",
-      header: "Email",
+      header: "Correo",
       cell: ({ row }) => (
         <div className="font-medium">{row.getValue("email")}</div>
       ),
     },
     {
       accessorKey: "name",
-      header: "Name",
+      header: "Nombre",
       cell: ({ row }) => {
         const name = row.getValue("name") as string;
         return name || <span className="text-muted-foreground">-</span>;
@@ -49,7 +49,7 @@ export function getUsersColumns({
     },
     {
       accessorKey: "isSuperAdmin",
-      header: "Role",
+      header: "Rol",
       cell: ({ row }) => {
         const isSuperAdmin = row.getValue("isSuperAdmin") as boolean;
         return isSuperAdmin ? (
@@ -58,25 +58,25 @@ export function getUsersColumns({
             Super Admin
           </Badge>
         ) : (
-          <Badge variant="secondary">User</Badge>
+          <Badge variant="secondary">Usuario</Badge>
         );
       },
     },
     {
       accessorKey: "isActive",
-      header: "Status",
+      header: "Estado",
       cell: ({ row }) => {
         const isActive = row.getValue("isActive") as boolean;
         return (
           <Badge variant={isActive ? "default" : "secondary"}>
-            {isActive ? "Active" : "Inactive"}
+            {isActive ? "Activo" : "Inactivo"}
           </Badge>
         );
       },
     },
     {
       accessorKey: "createdAt",
-      header: "Created",
+      header: "Creado",
       cell: ({ row }) => {
         const date = new Date(row.getValue("createdAt"));
         return date.toLocaleDateString();
@@ -92,7 +92,7 @@ export function getUsersColumns({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Abrir menú</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -100,7 +100,7 @@ export function getUsersColumns({
               <DropdownMenuItem asChild>
                 <Link href={`/admin/users/${user.id}`}>
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit
+                  Editar
                 </Link>
               </DropdownMenuItem>
               {!isSelf && (
@@ -109,12 +109,12 @@ export function getUsersColumns({
                     {user.isActive ? (
                       <>
                         <ToggleLeft className="mr-2 h-4 w-4" />
-                        Deactivate
+                        Desactivar
                       </>
                     ) : (
                       <>
                         <ToggleRight className="mr-2 h-4 w-4" />
-                        Activate
+                        Activar
                       </>
                     )}
                   </DropdownMenuItem>
@@ -123,7 +123,7 @@ export function getUsersColumns({
                     onClick={() => onDelete(user.id)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
+                    Eliminar
                   </DropdownMenuItem>
                 </>
               )}

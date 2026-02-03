@@ -21,17 +21,17 @@ export function ExecutiveCreatePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Add Executive Member</h1>
+      <h1 className="text-2xl font-bold">Agregar Miembro Ejecutivo</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Member Details</CardTitle>
+          <CardTitle>Detalles del Miembro</CardTitle>
         </CardHeader>
         <CardContent>
           <ExecutiveForm
             onSubmit={(data) => createMutation.mutate(data)}
             isLoading={createMutation.isPending}
-            submitLabel="Add Member"
+            submitLabel="Agregar Miembro"
           />
         </CardContent>
       </Card>

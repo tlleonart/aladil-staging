@@ -33,20 +33,20 @@ export function LabsEditPage({ id }: LabsEditPageProps) {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Cargando...</div>;
   }
 
   if (!lab) {
-    return <div>Lab not found</div>;
+    return <div>Laboratorio no encontrado</div>;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Edit Lab</h1>
+      <h1 className="text-2xl font-bold">Editar Laboratorio</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Lab Details</CardTitle>
+          <CardTitle>Detalles del Laboratorio</CardTitle>
         </CardHeader>
         <CardContent>
           <LabsForm
@@ -61,7 +61,7 @@ export function LabsEditPage({ id }: LabsEditPageProps) {
             }}
             onSubmit={(data) => updateMutation.mutate(data)}
             isLoading={updateMutation.isPending}
-            submitLabel="Update Lab"
+            submitLabel="Actualizar Laboratorio"
           />
         </CardContent>
       </Card>

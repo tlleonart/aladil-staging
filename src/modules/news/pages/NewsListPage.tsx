@@ -59,18 +59,18 @@ export function NewsListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">News</h1>
+        <h1 className="text-2xl font-bold">Noticias</h1>
         <Button asChild>
           <Link href="/admin/news/new">
             <Plus className="mr-2 h-4 w-4" />
-            New Post
+            Nueva Noticia
           </Link>
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>All Posts</CardTitle>
+          <CardTitle>Todas las Noticias</CardTitle>
         </CardHeader>
         <CardContent>
           <DataTable
@@ -84,9 +84,9 @@ export function NewsListPage() {
       <ConfirmDialog
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        title="Delete News Post"
-        description="Are you sure you want to delete this news post? This action cannot be undone."
-        confirmText="Delete"
+        title="Eliminar Noticia"
+        description="¿Estás seguro de que deseas eliminar esta noticia? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
         variant="destructive"
         isLoading={deleteMutation.isPending}
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}

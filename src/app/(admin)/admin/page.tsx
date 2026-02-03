@@ -7,19 +7,19 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const stats = [
-  { name: "News Posts", value: "-", icon: NewspaperIcon },
-  { name: "Meetings", value: "-", icon: CalendarIcon },
-  { name: "Labs", value: "-", icon: BuildingOffice2Icon },
-  { name: "Executive Members", value: "-", icon: UserGroupIcon },
+  { name: "Noticias", value: "-", icon: NewspaperIcon },
+  { name: "Reuniones", value: "-", icon: CalendarIcon },
+  { name: "Laboratorios", value: "-", icon: BuildingOffice2Icon },
+  { name: "Comité Ejecutivo", value: "-", icon: UserGroupIcon },
 ];
 
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Panel de Control</h1>
         <p className="text-neutral-500">
-          Welcome to the ALADIL admin dashboard.
+          Bienvenido al panel de administración de ALADIL.
         </p>
       </div>
 
@@ -39,28 +39,28 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Getting Started</CardTitle>
+          <CardTitle>Primeros Pasos</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-neutral-600">
-          <p>Use the sidebar to navigate between different sections:</p>
+          <p>Usa la barra lateral para navegar entre las diferentes secciones:</p>
           <ul className="mt-2 list-disc list-inside space-y-1">
             <li>
-              <strong>News</strong> - Manage news posts for the website
+              <strong>Noticias</strong> - Administrar noticias del sitio web
             </li>
             <li>
-              <strong>Meetings</strong> - Manage ALADIL annual meetings
+              <strong>Reuniones</strong> - Administrar reuniones anuales de ALADIL
             </li>
             <li>
-              <strong>Labs</strong> - Manage member laboratories
+              <strong>Laboratorios</strong> - Administrar laboratorios miembros
             </li>
             <li>
-              <strong>Executive</strong> - Manage executive committee members
+              <strong>Comité Ejecutivo</strong> - Administrar miembros del comité ejecutivo
             </li>
             <li>
-              <strong>Users</strong> - Manage admin users and roles
+              <strong>Usuarios</strong> - Administrar usuarios y roles
             </li>
             <li>
-              <strong>Contact</strong> - View contact form submissions
+              <strong>Contacto</strong> - Ver mensajes del formulario de contacto
             </li>
           </ul>
         </CardContent>

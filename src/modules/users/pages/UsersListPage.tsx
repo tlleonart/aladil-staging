@@ -54,18 +54,18 @@ export function UsersListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Users</h1>
+        <h1 className="text-2xl font-bold">Usuarios</h1>
         <Button asChild>
           <Link href="/admin/users/new">
             <Plus className="mr-2 h-4 w-4" />
-            New User
+            Nuevo Usuario
           </Link>
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>All Users</CardTitle>
+          <CardTitle>Todos los Usuarios</CardTitle>
         </CardHeader>
         <CardContent>
           <DataTable
@@ -79,9 +79,9 @@ export function UsersListPage() {
       <ConfirmDialog
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        title="Delete User"
-        description="Are you sure you want to delete this user? This action cannot be undone."
-        confirmText="Delete"
+        title="Eliminar Usuario"
+        description="¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
         variant="destructive"
         isLoading={deleteMutation.isPending}
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}

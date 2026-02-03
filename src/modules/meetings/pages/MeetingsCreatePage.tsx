@@ -21,17 +21,17 @@ export function MeetingsCreatePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Create Meeting</h1>
+      <h1 className="text-2xl font-bold">Crear Reunión</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Meeting Details</CardTitle>
+          <CardTitle>Detalles de la Reunión</CardTitle>
         </CardHeader>
         <CardContent>
           <MeetingsForm
             onSubmit={(data) => createMutation.mutate(data)}
             isLoading={createMutation.isPending}
-            submitLabel="Create Meeting"
+            submitLabel="Crear Reunión"
           />
         </CardContent>
       </Card>

@@ -33,20 +33,20 @@ export function UsersEditPage({ id }: UsersEditPageProps) {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Cargando...</div>;
   }
 
   if (!user) {
-    return <div>User not found</div>;
+    return <div>Usuario no encontrado</div>;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Edit User</h1>
+      <h1 className="text-2xl font-bold">Editar Usuario</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>User Details</CardTitle>
+          <CardTitle>Detalles del Usuario</CardTitle>
         </CardHeader>
         <CardContent>
           <UsersForm
@@ -59,7 +59,7 @@ export function UsersEditPage({ id }: UsersEditPageProps) {
             }}
             onSubmit={(data) => updateMutation.mutate(data as UpdateUser)}
             isLoading={updateMutation.isPending}
-            submitLabel="Update User"
+            submitLabel="Actualizar Usuario"
             isEdit
           />
         </CardContent>

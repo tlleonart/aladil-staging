@@ -21,17 +21,17 @@ export function LabsCreatePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Add New Lab</h1>
+      <h1 className="text-2xl font-bold">Agregar Nuevo Laboratorio</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Lab Details</CardTitle>
+          <CardTitle>Detalles del Laboratorio</CardTitle>
         </CardHeader>
         <CardContent>
           <LabsForm
             onSubmit={(data) => createMutation.mutate(data)}
             isLoading={createMutation.isPending}
-            submitLabel="Create Lab"
+            submitLabel="Crear Laboratorio"
           />
         </CardContent>
       </Card>

@@ -34,7 +34,7 @@ export function getMeetingsColumns({
     },
     {
       accessorKey: "title",
-      header: "Title",
+      header: "Título",
       cell: ({ row }) => (
         <div className="font-medium max-w-[300px] truncate">
           {row.getValue("title")}
@@ -43,7 +43,7 @@ export function getMeetingsColumns({
     },
     {
       accessorKey: "city",
-      header: "Location",
+      header: "Ubicación",
       cell: ({ row }) => {
         const meeting = row.original;
         return `${meeting.city}, ${meeting.country}`;
@@ -51,7 +51,7 @@ export function getMeetingsColumns({
     },
     {
       accessorKey: "startDate",
-      header: "Date",
+      header: "Fecha",
       cell: ({ row }) => {
         const date = new Date(row.getValue("startDate"));
         return date.toLocaleDateString();
@@ -59,7 +59,7 @@ export function getMeetingsColumns({
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: "Estado",
       cell: ({ row }) => <StatusBadge status={row.getValue("status")} />,
     },
     {
@@ -73,7 +73,7 @@ export function getMeetingsColumns({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Abrir menú</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -81,19 +81,19 @@ export function getMeetingsColumns({
               <DropdownMenuItem asChild>
                 <Link href={`/admin/meetings/${meeting.id}`}>
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit
+                  Editar
                 </Link>
               </DropdownMenuItem>
               {isDraft && (
                 <DropdownMenuItem onClick={() => onPublish(meeting.id)}>
                   <Eye className="mr-2 h-4 w-4" />
-                  Publish
+                  Publicar
                 </DropdownMenuItem>
               )}
               {isPublished && (
                 <DropdownMenuItem onClick={() => onArchive(meeting.id)}>
                   <Archive className="mr-2 h-4 w-4" />
-                  Archive
+                  Archivar
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
@@ -101,7 +101,7 @@ export function getMeetingsColumns({
                 onClick={() => onDelete(meeting.id)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete
+                Eliminar
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

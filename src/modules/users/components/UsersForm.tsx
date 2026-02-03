@@ -34,14 +34,12 @@ export function UsersForm({
   defaultValues,
   onSubmit,
   isLoading,
-  submitLabel = "Save",
+  submitLabel = "Guardar",
   isEdit = false,
 }: UsersFormProps) {
   const schema = isEdit
     ? CreateUserSchema.extend({
-        password: CreateUserSchema.shape.password
-          .optional()
-          .or(CreateUserSchema.shape.password),
+        password: CreateUserSchema.shape.password.optional(),
       })
     : CreateUserSchema;
 
@@ -66,9 +64,9 @@ export function UsersForm({
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Correo Electrónico</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="user@example.com" {...field} />
+                <Input type="email" placeholder="usuario@ejemplo.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -80,9 +78,9 @@ export function UsersForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Nombre</FormLabel>
               <FormControl>
-                <Input placeholder="Full name" {...field} />
+                <Input placeholder="Nombre completo" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -96,16 +94,16 @@ export function UsersForm({
             <FormItem>
               <FormLabel>
                 {isEdit
-                  ? "New Password (leave empty to keep current)"
-                  : "Password"}
+                  ? "Nueva Contraseña (dejar vacío para mantener la actual)"
+                  : "Contraseña"}
               </FormLabel>
               <FormControl>
                 <Input type="password" placeholder="********" {...field} />
               </FormControl>
               <FormDescription>
                 {isEdit
-                  ? "Leave empty to keep the current password"
-                  : "Minimum 8 characters"}
+                  ? "Dejar vacío para mantener la contraseña actual"
+                  : "Mínimo 8 caracteres"}
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -118,19 +116,19 @@ export function UsersForm({
             name="isActive"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel>Estado</FormLabel>
                 <Select
                   onValueChange={(value) => field.onChange(value === "true")}
                   defaultValue={field.value ? "true" : "false"}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue placeholder="Seleccionar estado" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="true">Active</SelectItem>
-                    <SelectItem value="false">Inactive</SelectItem>
+                    <SelectItem value="true">Activo</SelectItem>
+                    <SelectItem value="false">Inactivo</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -143,23 +141,23 @@ export function UsersForm({
             name="isSuperAdmin"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Admin Access</FormLabel>
+                <FormLabel>Acceso de Administrador</FormLabel>
                 <Select
                   onValueChange={(value) => field.onChange(value === "true")}
                   defaultValue={field.value ? "true" : "false"}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
+                      <SelectValue placeholder="Seleccionar rol" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="false">Regular User</SelectItem>
-                    <SelectItem value="true">Super Admin</SelectItem>
+                    <SelectItem value="false">Usuario Regular</SelectItem>
+                    <SelectItem value="true">Super Administrador</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                  Super admins bypass all RBAC checks
+                  Los super administradores omiten todas las verificaciones RBAC
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -169,7 +167,7 @@ export function UsersForm({
 
         <div className="flex gap-4">
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Saving..." : submitLabel}
+            {isLoading ? "Guardando..." : submitLabel}
           </Button>
         </div>
       </form>

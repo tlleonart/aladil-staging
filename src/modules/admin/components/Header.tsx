@@ -60,7 +60,7 @@ export const Header = ({ user, onMenuClick }: HeaderProps) => {
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>
             <div className="flex flex-col">
-              <span>{user.name || "User"}</span>
+              <span>{user.name || "Usuario"}</span>
               <span className="text-xs font-normal text-neutral-500">
                 {user.email}
               </span>
@@ -68,7 +68,7 @@ export const Header = ({ user, onMenuClick }: HeaderProps) => {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
-            Sign out
+            Cerrar sesión
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

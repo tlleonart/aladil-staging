@@ -21,17 +21,17 @@ export function UsersCreatePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Add New User</h1>
+      <h1 className="text-2xl font-bold">Agregar Nuevo Usuario</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>User Details</CardTitle>
+          <CardTitle>Detalles del Usuario</CardTitle>
         </CardHeader>
         <CardContent>
           <UsersForm
             onSubmit={(data) => createMutation.mutate(data as CreateUser)}
             isLoading={createMutation.isPending}
-            submitLabel="Create User"
+            submitLabel="Crear Usuario"
           />
         </CardContent>
       </Card>

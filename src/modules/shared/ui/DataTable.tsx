@@ -58,7 +58,7 @@ export function DataTable<TData, TValue>({
           {isLoading ? (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
-                Loading...
+                Cargando...
               </TableCell>
             </TableRow>
           ) : table.getRowModel().rows?.length ? (
@@ -79,7 +79,7 @@ export function DataTable<TData, TValue>({
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
+                Sin resultados.
               </TableCell>
             </TableRow>
           )}

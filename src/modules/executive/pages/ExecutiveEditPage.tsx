@@ -34,20 +34,20 @@ export function ExecutiveEditPage({ id }: ExecutiveEditPageProps) {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Cargando...</div>;
   }
 
   if (!member) {
-    return <div>Member not found</div>;
+    return <div>Miembro no encontrado</div>;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Edit Executive Member</h1>
+      <h1 className="text-2xl font-bold">Editar Miembro Ejecutivo</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Member Details</CardTitle>
+          <CardTitle>Detalles del Miembro</CardTitle>
         </CardHeader>
         <CardContent>
           <ExecutiveForm
@@ -63,7 +63,7 @@ export function ExecutiveEditPage({ id }: ExecutiveEditPageProps) {
             }}
             onSubmit={(data) => updateMutation.mutate(data)}
             isLoading={updateMutation.isPending}
-            submitLabel="Update Member"
+            submitLabel="Actualizar Miembro"
           />
         </CardContent>
       </Card>

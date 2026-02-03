@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { orpc } from "@/modules/core/orpc/client";
+import { useQuery } from "@/modules/core/orpc/react";
 import { type CreateMeeting, CreateMeetingSchema } from "../schemas";
 
 // Helper to generate slug from title
@@ -43,8 +45,14 @@ export const MeetingsForm = ({
   defaultValues,
   onSubmit,
   isLoading,
-  submitLabel = "Save",
+  submitLabel = "Guardar",
 }: MeetingsFormProps) => {
+  // Fetch labs for the host lab selector
+  const { data: labs = [] } = useQuery({
+    queryKey: ["labs", "list"],
+    queryFn: () => orpc.labs.list({ limit: 100 }),
+  });
+
   const form = useForm<CreateMeeting>({
     resolver: zodResolver(CreateMeetingSchema),
     defaultValues: {
@@ -57,6 +65,7 @@ export const MeetingsForm = ({
       startDate: "",
       endDate: "",
       hostName: "",
+      hostLabId: "",
       summary: "",
       content: "",
       status: "DRAFT",
@@ -95,11 +104,11 @@ export const MeetingsForm = ({
             name="number"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Meeting Number</FormLabel>
+                <FormLabel>Número de Reunión</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
-                    placeholder="e.g. 36"
+                    placeholder="ej. 36"
                     {...field}
                     onChange={(e) =>
                       field.onChange(parseInt(e.target.value, 10) || 0)
@@ -116,20 +125,20 @@ export const MeetingsForm = ({
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel>Estado</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue placeholder="Seleccionar estado" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="DRAFT">Draft</SelectItem>
-                    <SelectItem value="PUBLISHED">Published</SelectItem>
-                    <SelectItem value="ARCHIVED">Archived</SelectItem>
+                    <SelectItem value="DRAFT">Borrador</SelectItem>
+                    <SelectItem value="PUBLISHED">Publicado</SelectItem>
+                    <SelectItem value="ARCHIVED">Archivado</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -143,10 +152,10 @@ export const MeetingsForm = ({
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Title</FormLabel>
+              <FormLabel>Título</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="e.g. Reunion #36 | Santa Cruz de la Sierra, Bolivia"
+                  placeholder="ej. Reunión #36 | Santa Cruz de la Sierra, Bolivia"
                   {...field}
                 />
               </FormControl>
@@ -160,16 +169,16 @@ export const MeetingsForm = ({
           name="slug"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Slug</FormLabel>
+              <FormLabel>Slug (URL)</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="auto-generated-from-title"
+                  placeholder="se-genera-automaticamente-del-titulo"
                   {...field}
                   value={field.value || ""}
                 />
               </FormControl>
               <FormDescription>
-                Auto-generated from title. Edit to customize.
+                Se genera automáticamente del título. Puedes editarlo manualmente.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -182,7 +191,7 @@ export const MeetingsForm = ({
             name="city"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>City</FormLabel>
+                <FormLabel>Ciudad</FormLabel>
                 <FormControl>
                   <Input placeholder="Santa Cruz de la Sierra" {...field} />
                 </FormControl>
@@ -196,7 +205,7 @@ export const MeetingsForm = ({
             name="country"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Country</FormLabel>
+                <FormLabel>País</FormLabel>
                 <FormControl>
                   <Input placeholder="Bolivia" {...field} />
                 </FormControl>
@@ -210,7 +219,7 @@ export const MeetingsForm = ({
             name="countryCode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Country Code</FormLabel>
+                <FormLabel>Código de País</FormLabel>
                 <FormControl>
                   <Input placeholder="BO" maxLength={2} {...field} />
                 </FormControl>
@@ -226,7 +235,7 @@ export const MeetingsForm = ({
             name="startDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Start Date</FormLabel>
+                <FormLabel>Fecha de Inicio</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -240,7 +249,7 @@ export const MeetingsForm = ({
             name="endDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>End Date (optional)</FormLabel>
+                <FormLabel>Fecha de Fin (opcional)</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} value={field.value || ""} />
                 </FormControl>
@@ -250,33 +259,70 @@ export const MeetingsForm = ({
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="hostName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Host Name (optional)</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Host organization name"
-                  {...field}
-                  value={field.value || ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="hostLabId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Laboratorio Anfitrión</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value || ""}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar laboratorio" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">Ninguno</SelectItem>
+                    {labs.map((lab) => (
+                      <SelectItem key={lab.id} value={lab.id}>
+                        {lab.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Selecciona el laboratorio que organiza esta reunión
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="hostName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre del Anfitrión (opcional)</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="O ingresa el nombre manualmente"
+                    {...field}
+                    value={field.value || ""}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Usar si el anfitrión no es un laboratorio miembro
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}
           name="summary"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Summary</FormLabel>
+              <FormLabel>Resumen</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Brief summary of the meeting"
+                  placeholder="Breve resumen de la reunión"
                   rows={3}
                   {...field}
                   value={field.value || ""}
@@ -292,10 +338,10 @@ export const MeetingsForm = ({
           name="content"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Content</FormLabel>
+              <FormLabel>Contenido</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Full content/description of the meeting"
+                  placeholder="Descripción completa de la reunión"
                   rows={10}
                   {...field}
                   value={field.value || ""}
@@ -308,7 +354,7 @@ export const MeetingsForm = ({
 
         <div className="flex gap-4">
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Saving..." : submitLabel}
+            {isLoading ? "Guardando..." : submitLabel}
           </Button>
         </div>
       </form>

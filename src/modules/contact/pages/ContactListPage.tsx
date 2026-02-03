@@ -133,29 +133,29 @@ export const ContactListPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">Contact Messages</h1>
+          <h1 className="text-2xl font-bold">Mensajes de Contacto</h1>
           {newCount > 0 && (
             <span className="bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-full">
-              {newCount} new
+              {newCount} nuevos
             </span>
           )}
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
+            <SelectValue placeholder="Filtrar por estado" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Messages</SelectItem>
-            <SelectItem value="NEW">New</SelectItem>
-            <SelectItem value="READ">Read</SelectItem>
-            <SelectItem value="ARCHIVED">Archived</SelectItem>
+            <SelectItem value="all">Todos los Mensajes</SelectItem>
+            <SelectItem value="NEW">Nuevos</SelectItem>
+            <SelectItem value="READ">Leídos</SelectItem>
+            <SelectItem value="ARCHIVED">Archivados</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Messages</CardTitle>
+          <CardTitle>Mensajes</CardTitle>
         </CardHeader>
         <CardContent>
           <DataTable

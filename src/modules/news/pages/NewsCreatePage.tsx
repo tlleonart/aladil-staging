@@ -21,17 +21,17 @@ export function NewsCreatePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Create News Post</h1>
+      <h1 className="text-2xl font-bold">Crear Noticia</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Post Details</CardTitle>
+          <CardTitle>Detalles de la Noticia</CardTitle>
         </CardHeader>
         <CardContent>
           <NewsForm
             onSubmit={(data) => createMutation.mutate(data)}
             isLoading={createMutation.isPending}
-            submitLabel="Create Post"
+            submitLabel="Crear Noticia"
           />
         </CardContent>
       </Card>

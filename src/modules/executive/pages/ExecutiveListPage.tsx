@@ -51,18 +51,18 @@ export function ExecutiveListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Executive Committee</h1>
+        <h1 className="text-2xl font-bold">Comité Ejecutivo</h1>
         <Button asChild>
           <Link href="/admin/executive/new">
             <Plus className="mr-2 h-4 w-4" />
-            New Member
+            Nuevo Miembro
           </Link>
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Committee Members</CardTitle>
+          <CardTitle>Miembros del Comité</CardTitle>
         </CardHeader>
         <CardContent>
           <DataTable
@@ -76,9 +76,9 @@ export function ExecutiveListPage() {
       <ConfirmDialog
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        title="Delete Member"
-        description="Are you sure you want to delete this executive committee member? This action cannot be undone."
-        confirmText="Delete"
+        title="Eliminar Miembro"
+        description="¿Estás seguro de que deseas eliminar este miembro del comité ejecutivo? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
         variant="destructive"
         isLoading={deleteMutation.isPending}
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}

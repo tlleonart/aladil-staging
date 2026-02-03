@@ -33,7 +33,7 @@ export function LabsForm({
   defaultValues,
   onSubmit,
   isLoading,
-  submitLabel = "Save",
+  submitLabel = "Guardar",
 }: LabsFormProps) {
   const form = useForm<CreateLab>({
     resolver: zodResolver(CreateLabSchema),
@@ -56,9 +56,9 @@ export function LabsForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Nombre</FormLabel>
               <FormControl>
-                <Input placeholder="Laboratory name" {...field} />
+                <Input placeholder="Nombre del laboratorio" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -71,12 +71,12 @@ export function LabsForm({
             name="countryCode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Country Code</FormLabel>
+                <FormLabel>Código de País</FormLabel>
                 <FormControl>
                   <Input placeholder="AR" maxLength={2} {...field} />
                 </FormControl>
                 <FormDescription>
-                  ISO 3166-1 alpha-2 code (e.g., AR, UY, BR)
+                  Código ISO 3166-1 alpha-2 (ej. AR, UY, BR)
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -88,7 +88,7 @@ export function LabsForm({
             name="city"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>City (optional)</FormLabel>
+                <FormLabel>Ciudad (opcional)</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Buenos Aires"
@@ -107,11 +107,11 @@ export function LabsForm({
           name="websiteUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Website URL (optional)</FormLabel>
+              <FormLabel>Sitio Web (opcional)</FormLabel>
               <FormControl>
                 <Input
                   type="url"
-                  placeholder="https://example.com"
+                  placeholder="https://ejemplo.com"
                   {...field}
                   value={field.value || ""}
                 />
@@ -127,7 +127,7 @@ export function LabsForm({
             name="sortOrder"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Sort Order</FormLabel>
+                <FormLabel>Orden</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -137,7 +137,7 @@ export function LabsForm({
                     }
                   />
                 </FormControl>
-                <FormDescription>Lower numbers appear first</FormDescription>
+                <FormDescription>Los números menores aparecen primero</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -148,19 +148,19 @@ export function LabsForm({
             name="isActive"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel>Estado</FormLabel>
                 <Select
                   onValueChange={(value) => field.onChange(value === "true")}
                   defaultValue={field.value ? "true" : "false"}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue placeholder="Seleccionar estado" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="true">Active</SelectItem>
-                    <SelectItem value="false">Inactive</SelectItem>
+                    <SelectItem value="true">Activo</SelectItem>
+                    <SelectItem value="false">Inactivo</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -171,7 +171,7 @@ export function LabsForm({
 
         <div className="flex gap-4">
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Saving..." : submitLabel}
+            {isLoading ? "Guardando..." : submitLabel}
           </Button>
         </div>
       </form>

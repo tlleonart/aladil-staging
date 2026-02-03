@@ -51,18 +51,18 @@ export function LabsListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Labs</h1>
+        <h1 className="text-2xl font-bold">Laboratorios</h1>
         <Button asChild>
           <Link href="/admin/labs/new">
             <Plus className="mr-2 h-4 w-4" />
-            New Lab
+            Nuevo Laboratorio
           </Link>
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Member Laboratories</CardTitle>
+          <CardTitle>Laboratorios Miembros</CardTitle>
         </CardHeader>
         <CardContent>
           <DataTable
@@ -76,9 +76,9 @@ export function LabsListPage() {
       <ConfirmDialog
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        title="Delete Lab"
-        description="Are you sure you want to delete this laboratory? This action cannot be undone."
-        confirmText="Delete"
+        title="Eliminar Laboratorio"
+        description="¿Estás seguro de que deseas eliminar este laboratorio? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
         variant="destructive"
         isLoading={deleteMutation.isPending}
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}

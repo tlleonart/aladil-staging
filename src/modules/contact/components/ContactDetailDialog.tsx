@@ -25,17 +25,17 @@ interface ContactDetailDialogProps {
 
 const statusConfig = {
   NEW: {
-    label: "New",
+    label: "Nuevo",
     variant: "default" as const,
     className: "bg-blue-600 hover:bg-blue-600",
   },
   READ: {
-    label: "Read",
+    label: "Leído",
     variant: "secondary" as const,
     className: "bg-gray-100 text-gray-800 hover:bg-gray-100",
   },
   ARCHIVED: {
-    label: "Archived",
+    label: "Archivado",
     variant: "outline" as const,
     className:
       "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100",
@@ -78,7 +78,7 @@ export const ContactDetailDialog = ({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
-            Contact Message
+            Mensaje de Contacto
             <Badge variant={config.variant} className={config.className}>
               {config.label}
             </Badge>
@@ -88,11 +88,11 @@ export const ContactDetailDialog = ({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Name</p>
+              <p className="text-sm text-muted-foreground">Nombre</p>
               <p className="font-medium">{message.name}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Email</p>
+              <p className="text-sm text-muted-foreground">Correo</p>
               <a
                 href={`mailto:${message.email}`}
                 className="font-medium text-blue-600 hover:underline"
@@ -103,7 +103,7 @@ export const ContactDetailDialog = ({
           </div>
 
           <div>
-            <p className="text-sm text-muted-foreground">Date</p>
+            <p className="text-sm text-muted-foreground">Fecha</p>
             <p className="font-medium">
               {new Date(message.createdAt).toLocaleString()}
             </p>
@@ -112,7 +112,7 @@ export const ContactDetailDialog = ({
           <Separator />
 
           <div>
-            <p className="text-sm text-muted-foreground mb-2">Message</p>
+            <p className="text-sm text-muted-foreground mb-2">Mensaje</p>
             <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap">
               {message.message}
             </div>
@@ -128,7 +128,7 @@ export const ContactDetailDialog = ({
                 disabled={isLoading}
               >
                 <MailOpen className="mr-2 h-4 w-4" />
-                Mark as Read
+                Marcar como Leído
               </Button>
             )}
             {!isArchived && onArchive && (
@@ -138,7 +138,7 @@ export const ContactDetailDialog = ({
                 disabled={isLoading}
               >
                 <Archive className="mr-2 h-4 w-4" />
-                Archive
+                Archivar
               </Button>
             )}
             {isArchived && onUnarchive && (
@@ -148,12 +148,12 @@ export const ContactDetailDialog = ({
                 disabled={isLoading}
               >
                 <ArchiveRestore className="mr-2 h-4 w-4" />
-                Unarchive
+                Desarchivar
               </Button>
             )}
           </div>
           <Button variant="secondary" onClick={handleClose}>
-            Close
+            Cerrar
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -14,13 +14,13 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Dashboard", href: "/admin", icon: HomeIcon },
-  { name: "News", href: "/admin/news", icon: NewspaperIcon },
-  { name: "Meetings", href: "/admin/meetings", icon: CalendarIcon },
-  { name: "Labs", href: "/admin/labs", icon: BuildingOffice2Icon },
-  { name: "Executive", href: "/admin/executive", icon: UserGroupIcon },
-  { name: "Users", href: "/admin/users", icon: UsersIcon },
-  { name: "Contact", href: "/admin/contact", icon: EnvelopeIcon },
+  { name: "Panel", href: "/admin", icon: HomeIcon },
+  { name: "Noticias", href: "/admin/news", icon: NewspaperIcon },
+  { name: "Reuniones", href: "/admin/meetings", icon: CalendarIcon },
+  { name: "Laboratorios", href: "/admin/labs", icon: BuildingOffice2Icon },
+  { name: "Comité Ejecutivo", href: "/admin/executive", icon: UserGroupIcon },
+  { name: "Usuarios", href: "/admin/users", icon: UsersIcon },
+  { name: "Contacto", href: "/admin/contact", icon: EnvelopeIcon },
 ];
 
 interface SidebarProps {

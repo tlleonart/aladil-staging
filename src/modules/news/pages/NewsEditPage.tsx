@@ -34,20 +34,20 @@ export function NewsEditPage({ id }: NewsEditPageProps) {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Cargando...</div>;
   }
 
   if (!post) {
-    return <div>Post not found</div>;
+    return <div>Noticia no encontrada</div>;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Edit News Post</h1>
+      <h1 className="text-2xl font-bold">Editar Noticia</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Post Details</CardTitle>
+          <CardTitle>Detalles de la Noticia</CardTitle>
         </CardHeader>
         <CardContent>
           <NewsForm
@@ -61,7 +61,7 @@ export function NewsEditPage({ id }: NewsEditPageProps) {
             }}
             onSubmit={(data) => updateMutation.mutate(data)}
             isLoading={updateMutation.isPending}
-            submitLabel="Update Post"
+            submitLabel="Actualizar Noticia"
           />
         </CardContent>
       </Card>

@@ -20,6 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { orpc } from "@/modules/core/orpc/client";
+import { useQuery } from "@/modules/core/orpc/react";
 import {
   type CreateExecutiveMember,
   CreateExecutiveMemberSchema,
@@ -36,8 +38,14 @@ export function ExecutiveForm({
   defaultValues,
   onSubmit,
   isLoading,
-  submitLabel = "Save",
+  submitLabel = "Guardar",
 }: ExecutiveFormProps) {
+  // Fetch labs for the lab selector
+  const { data: labs = [] } = useQuery({
+    queryKey: ["labs", "list"],
+    queryFn: () => orpc.labs.list({ limit: 100 }),
+  });
+
   const form = useForm<CreateExecutiveMember>({
     resolver: zodResolver(CreateExecutiveMemberSchema),
     defaultValues: {
@@ -46,6 +54,7 @@ export function ExecutiveForm({
       countryCode: "",
       sortOrder: 0,
       isActive: true,
+      labId: "",
       ...defaultValues,
     },
   });
@@ -58,9 +67,9 @@ export function ExecutiveForm({
           name="fullName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Full Name</FormLabel>
+              <FormLabel>Nombre Completo</FormLabel>
               <FormControl>
-                <Input placeholder="Full name" {...field} />
+                <Input placeholder="Nombre completo" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -72,10 +81,10 @@ export function ExecutiveForm({
           name="position"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Position</FormLabel>
+              <FormLabel>Cargo</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="e.g. Presidente, Vice Presidente"
+                  placeholder="ej. Presidente, Vice Presidente"
                   {...field}
                 />
               </FormControl>
@@ -84,22 +93,56 @@ export function ExecutiveForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="countryCode"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Country Code</FormLabel>
-              <FormControl>
-                <Input placeholder="AR" maxLength={2} {...field} />
-              </FormControl>
-              <FormDescription>
-                ISO 3166-1 alpha-2 code (e.g., AR, UY, BR)
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="countryCode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Código de País</FormLabel>
+                <FormControl>
+                  <Input placeholder="AR" maxLength={2} {...field} />
+                </FormControl>
+                <FormDescription>
+                  Código ISO 3166-1 alpha-2 (ej. AR, UY, BR)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="labId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Laboratorio</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value || ""}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar laboratorio" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">Ninguno</SelectItem>
+                    {labs.map((lab) => (
+                      <SelectItem key={lab.id} value={lab.id}>
+                        {lab.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Laboratorio asociado (opcional)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <FormField
@@ -107,7 +150,7 @@ export function ExecutiveForm({
             name="sortOrder"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Sort Order</FormLabel>
+                <FormLabel>Orden</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -117,7 +160,7 @@ export function ExecutiveForm({
                     }
                   />
                 </FormControl>
-                <FormDescription>Lower numbers appear first</FormDescription>
+                <FormDescription>Los números menores aparecen primero</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -128,19 +171,19 @@ export function ExecutiveForm({
             name="isActive"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel>Estado</FormLabel>
                 <Select
                   onValueChange={(value) => field.onChange(value === "true")}
                   defaultValue={field.value ? "true" : "false"}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue placeholder="Seleccionar estado" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="true">Active</SelectItem>
-                    <SelectItem value="false">Inactive</SelectItem>
+                    <SelectItem value="true">Activo</SelectItem>
+                    <SelectItem value="false">Inactivo</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -151,7 +194,7 @@ export function ExecutiveForm({
 
         <div className="flex gap-4">
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Saving..." : submitLabel}
+            {isLoading ? "Guardando..." : submitLabel}
           </Button>
         </div>
       </form>

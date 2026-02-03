@@ -212,7 +212,7 @@ export const listPublished = publicProcedure
 export const getBySlug = publicProcedure
   .input(z.object({ slug: z.string() }))
   .handler(async ({ input }) => {
-    const post = await prisma.newsPost.findUnique({
+    const post = await prisma.newsPost.findFirst({
       where: {
         slug: input.slug,
         status: "PUBLISHED",

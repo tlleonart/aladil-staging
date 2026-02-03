@@ -59,18 +59,18 @@ export function MeetingsListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Meetings</h1>
+        <h1 className="text-2xl font-bold">Reuniones</h1>
         <Button asChild>
           <Link href="/admin/meetings/new">
             <Plus className="mr-2 h-4 w-4" />
-            New Meeting
+            Nueva Reunión
           </Link>
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>All Meetings</CardTitle>
+          <CardTitle>Todas las Reuniones</CardTitle>
         </CardHeader>
         <CardContent>
           <DataTable
@@ -84,9 +84,9 @@ export function MeetingsListPage() {
       <ConfirmDialog
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        title="Delete Meeting"
-        description="Are you sure you want to delete this meeting? This action cannot be undone."
-        confirmText="Delete"
+        title="Eliminar Reunión"
+        description="¿Estás seguro de que deseas eliminar esta reunión? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
         variant="destructive"
         isLoading={deleteMutation.isPending}
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
