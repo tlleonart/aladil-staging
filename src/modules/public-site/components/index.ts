@@ -1,8 +1,8 @@
-export { ContactForm } from "./ContactForm";
+export { ContactSection } from "./ContactSection";
 export { ExecutiveCard } from "./ExecutiveCard";
 export { Footer } from "./Footer";
 export { Header } from "./Header";
-export { LabCard } from "./LabCard";
-export { LabsMap } from "./LabsMap";
+export { HeroCarousel } from "./HeroCarousel";
 export { MeetingCard } from "./MeetingCard";
 export { NewsCard } from "./NewsCard";
+export { PartnersSection } from "./PartnersSection";

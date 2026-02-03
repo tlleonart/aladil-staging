@@ -18,6 +18,10 @@
     "db:studio": "dotenv -e .env.local -- prisma studio",
     "db:seed": "dotenv -e .env.local -- npx tsx prisma/seed.ts",
     "db:seed-content": "dotenv -e .env.local -- npx tsx prisma/seed-content.ts",
+    "db:reset-labs": "dotenv -e .env.local -- npx tsx prisma/reset-labs.ts",
+    "db:reset-meetings": "dotenv -e .env.local -- npx tsx prisma/reset-meetings.ts",
+    "db:upload-meeting-images": "dotenv -e .env.local -- npx tsx prisma/upload-meeting-images.ts",
+    "db:upload-meeting-gallery": "dotenv -e .env.local -- npx tsx prisma/upload-meeting-gallery.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -53,6 +57,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
+    "embla-carousel-autoplay": "^8.6.0",
+    "embla-carousel-react": "^8.6.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",

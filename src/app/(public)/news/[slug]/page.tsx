@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { generateArticleMetadata } from "@/app/(public)/metadata";
 import { prisma } from "@/modules/core/db";
 import { NewsDetailPage } from "@/modules/public-site/pages/NewsDetailPage";
-import { generateArticleMetadata } from "@/app/(public)/metadata";
 
 interface NewsPageProps {
   params: Promise<{

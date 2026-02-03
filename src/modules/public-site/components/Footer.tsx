@@ -11,14 +11,17 @@ import Link from "next/link";
 
 const footerLinks = {
   institution: [
-    { name: "Quiénes Somos", href: "/about" },
-    { name: "Comité Ejecutivo", href: "/executive" },
-    { name: "Socios", href: "/laboratories" },
+    { name: "Quiénes Somos", href: "/#quienes-somos" },
+    { name: "Socios", href: "/#socios" },
+  ],
+  meetings: [
+    { name: "Próxima Reunión", href: "/meetings/next" },
+    { name: "Última Reunión", href: "/meetings/last" },
+    { name: "Reuniones Anteriores", href: "/meetings/past" },
   ],
   resources: [
-    { name: "Reuniones", href: "/meetings" },
     { name: "Noticias", href: "/news" },
-    { name: "Contacto", href: "/contact" },
+    { name: "Contacto", href: "/#contacto" },
   ],
 };
 
@@ -85,13 +88,13 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Resources Links */}
+          {/* Meetings Links */}
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">
-              Recursos
+              Reuniones
             </h3>
             <ul className="space-y-2">
-              {footerLinks.resources.map((item) => (
+              {footerLinks.meetings.map((item) => (
                 <li key={item.name}>
                   <Link
                     href={item.href}

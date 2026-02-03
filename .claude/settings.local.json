@@ -51,7 +51,28 @@
       "Bash(taskkill:*)",
       "Bash(npx @anthropic-ai/claude-code mcp list)",
       "WebFetch(domain:supabase.com)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Complete public site with SEO, visual refinements, and contact map\n\nSEO Implementation:\n- Add comprehensive metadata in layout.tsx \\(Open Graph, Twitter Cards\\)\n- Create reusable metadata utilities in src/app/\\(public\\)/metadata.ts\n- Add dynamic sitemap.ts with static pages + meetings/news\n- Add robots.ts configuration\n- Add metadata to all public pages with canonical URLs\n\nVisual Refinements:\n- Update Header with real logo using Next.js Image\n- Update Footer with real logo \\(brightness/invert filter for dark bg\\)\n- Change HTML lang from \"en\" to \"es\"\n\nContact Page Enhancements:\n- Create ContactMap component with Leaflet/React-Leaflet\n- Add interactive map centered on Santiago, Chile\n- Replace placeholder with real map in ContactPage\n\nDocumentation:\n- Update project_status.md to reflect Phase 4 completion\n- Update changelog.md with v0.3.0 changes\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(tasklist:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: Public pages data loading and routing\n\n- Remove default Next.js page.tsx that was overriding public home\n- Convert public pages to Server Components for reliable data loading:\n  - MeetingsPage: Server-side data fetching with Prisma\n  - NewsPage: Server-side data fetching with Prisma\n  - ExecutivePage: Server-side data fetching with Prisma\n  - LaboratoriesPage: Hybrid approach with server data + client map\n- Extract LaboratoriesContent as client component for Leaflet interactivity\n- Update documentation with changes\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "mcp__plugin_compound-engineering_pw__browser_take_screenshot",
+      "Bash(dir:*)",
+      "mcp__plugin_compound-engineering_pw__browser_press_key",
+      "mcp__plugin_compound-engineering_pw__browser_close",
+      "Bash(npx tsx:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Add executive member photos to Supabase Storage\n\n- Add @supabase/supabase-js client for asset management\n- Create upload-assets.ts script for uploading member photos\n- Upload photos for all 4 executive committee members\n- Photos now display from Supabase Storage in /executive and home page\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(copy \"C:\\\\Users\\\\tomas\\\\Documents\\\\c14\\\\repos\\\\aladil-web\\\\src\\\\modules\\\\home\\\\components\\\\sections\\\\main\\\\assets\\\\aladil_test.jpg\" \"C:\\\\Users\\\\tomas\\\\Documents\\\\c14\\\\repos\\\\aladil\\\\public\\\\carousel-1.jpg\")",
+      "Bash(copy \"C:\\\\Users\\\\tomas\\\\Documents\\\\c14\\\\repos\\\\aladil-web\\\\src\\\\modules\\\\home\\\\components\\\\sections\\\\main\\\\assets\\\\second.jpg\" \"C:\\\\Users\\\\tomas\\\\Documents\\\\c14\\\\repos\\\\aladil\\\\public\\\\carousel-2.jpg\")",
+      "Bash(pnpm db:reset-labs:*)",
+      "Bash(npx playwright test --list)",
+      "Bash(npx --yes playwright@latest screenshot:*)",
+      "Bash(npx playwright install:*)",
+      "Bash(npx playwright:*)",
+      "Bash(pnpm biome check:*)",
+      "Bash(pnpm db:reset-meetings:*)",
+      "Bash(pnpm db:upload-meeting-images:*)",
+      "Bash(pnpm db:upload-meeting-gallery:*)"
     ]
   }
 }

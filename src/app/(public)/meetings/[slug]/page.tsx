@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { generateArticleMetadata } from "@/app/(public)/metadata";
 import { prisma } from "@/modules/core/db";
 import { MeetingDetailPage } from "@/modules/public-site/pages/MeetingDetailPage";
-import { generateArticleMetadata } from "@/app/(public)/metadata";
 
 interface MeetingPageProps {
   params: Promise<{
@@ -62,15 +62,20 @@ export async function generateMetadata({
 export default async function MeetingPage({ params }: MeetingPageProps) {
   const { slug } = await params;
 
-  // Validate the meeting exists and is published
+  // Fetch the full meeting data
   const meeting = await prisma.meeting.findUnique({
     where: { slug },
-    select: { id: true, status: true },
+    include: {
+      coverAsset: true,
+      hostLab: { select: { id: true, name: true } },
+      topicsPdfAsset: true,
+      gallery: { include: { asset: true }, orderBy: { sortOrder: "asc" } },
+    },
   });
 
   if (!meeting || meeting.status !== "PUBLISHED") {
     notFound();
   }
 
-  return <MeetingDetailPage slug={slug} />;
+  return <MeetingDetailPage meeting={meeting} />;
 }

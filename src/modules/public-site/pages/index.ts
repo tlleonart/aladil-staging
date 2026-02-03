@@ -1,8 +1,5 @@
-export { AboutPage } from "./AboutPage";
-export { ContactPage } from "./ContactPage";
 export { ExecutivePage } from "./ExecutivePage";
 export { HomePage } from "./HomePage";
-export { LaboratoriesPage } from "./LaboratoriesPage";
 export { MeetingDetailPage } from "./MeetingDetailPage";
 export { MeetingsPage } from "./MeetingsPage";
 export { NewsDetailPage } from "./NewsDetailPage";

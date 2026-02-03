@@ -4,14 +4,15 @@
  */
 
 import * as dotenv from "dotenv";
+
 dotenv.config({ path: ".env.local" });
 
-import { createClient } from "@supabase/supabase-js";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
-import { Pool } from "pg";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@prisma/client";
+import { createClient } from "@supabase/supabase-js";
+import { Pool } from "pg";
 
 // Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -51,7 +52,8 @@ const MEMBER_PHOTOS: Record<string, string> = {
 async function ensureBucketExists() {
   console.log(`\n📦 Checking bucket "${BUCKET_NAME}"...`);
 
-  const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+  const { data: buckets, error: listError } =
+    await supabase.storage.listBuckets();
 
   if (listError) {
     console.error("Error listing buckets:", listError);
@@ -62,10 +64,13 @@ async function ensureBucketExists() {
 
   if (!bucketExists) {
     console.log(`  Creating bucket "${BUCKET_NAME}"...`);
-    const { error: createError } = await supabase.storage.createBucket(BUCKET_NAME, {
-      public: true,
-      fileSizeLimit: 10485760, // 10MB
-    });
+    const { error: createError } = await supabase.storage.createBucket(
+      BUCKET_NAME,
+      {
+        public: true,
+        fileSizeLimit: 10485760, // 10MB
+      },
+    );
 
     if (createError) {
       console.error("Error creating bucket:", createError);
@@ -77,7 +82,10 @@ async function ensureBucketExists() {
   }
 }
 
-async function uploadFile(localPath: string, storagePath: string): Promise<string | null> {
+async function uploadFile(
+  localPath: string,
+  storagePath: string,
+): Promise<string | null> {
   const fileBuffer = fs.readFileSync(localPath);
   const fileName = path.basename(localPath);
   const mimeType = getMimeType(fileName);

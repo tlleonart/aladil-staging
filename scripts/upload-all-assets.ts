@@ -4,14 +4,15 @@
  */
 
 import * as dotenv from "dotenv";
+
 dotenv.config({ path: ".env.local" });
 
-import { createClient } from "@supabase/supabase-js";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
-import { Pool } from "pg";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@prisma/client";
+import { createClient } from "@supabase/supabase-js";
+import { Pool } from "pg";
 
 // Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -43,7 +44,7 @@ const BUCKET_NAME = "assets";
 // Path to aladil-web assets
 const ALADIL_WEB_PATH = path.join(
   process.env.HOME || process.env.USERPROFILE || "",
-  "Documents/c14/repos/aladil-web"
+  "Documents/c14/repos/aladil-web",
 );
 
 // Lab logo mappings (filename -> lab name in DB)
@@ -62,14 +63,14 @@ const LAB_LOGOS: Record<string, string> = {
 
 // Meeting cover mappings (filename -> meeting number)
 const MEETING_COVERS: Record<string, number> = {
-  "rosario.png": 33,        // Rosario, Argentina 2023
-  "montevideo.jpeg": 34,    // Montevideo, Uruguay 2024
-  "asuncion.jpg": 35,       // Asunción, Paraguay 2025
-  "la-paz.webp": 36,        // Santa Cruz, Bolivia 2025 (using la-paz as closest)
-  "costa-rica.png": 37,     // Costa Rica 2026 (draft)
-  "guatemala.jpg": 32,      // Guatemala 2022
-  "dominicana.jpg": 31,     // placeholder
-  "virtual.png": 30,        // Virtual 2020
+  "rosario.png": 33, // Rosario, Argentina 2023
+  "montevideo.jpeg": 34, // Montevideo, Uruguay 2024
+  "asuncion.jpg": 35, // Asunción, Paraguay 2025
+  "la-paz.webp": 36, // Santa Cruz, Bolivia 2025 (using la-paz as closest)
+  "costa-rica.png": 37, // Costa Rica 2026 (draft)
+  "guatemala.jpg": 32, // Guatemala 2022
+  "dominicana.jpg": 31, // placeholder
+  "virtual.png": 30, // Virtual 2020
 };
 
 function getMimeType(filename: string): string {
@@ -117,7 +118,7 @@ async function ensureBucketExists() {
       {
         public: true,
         fileSizeLimit: 52428800, // 50MB
-      }
+      },
     );
 
     if (createError) {
@@ -132,7 +133,7 @@ async function ensureBucketExists() {
 
 async function uploadFile(
   localPath: string,
-  storagePath: string
+  storagePath: string,
 ): Promise<string | null> {
   if (!fs.existsSync(localPath)) {
     console.log(`  ⚠️ File not found: ${localPath}`);
@@ -163,7 +164,7 @@ async function uploadFile(
 async function createAssetRecord(
   storagePath: string,
   filename: string,
-  localPath: string
+  localPath: string,
 ): Promise<string | null> {
   const stats = fs.statSync(localPath);
 
@@ -197,7 +198,7 @@ async function uploadLabLogos() {
 
   const logosDir = path.join(
     ALADIL_WEB_PATH,
-    "src/modules/home/components/sections/partners/assets"
+    "src/modules/home/components/sections/partners/assets",
   );
 
   for (const [filename, labName] of Object.entries(LAB_LOGOS)) {
@@ -233,7 +234,7 @@ async function uploadMeetingCovers() {
   const meetingsDirs = [
     path.join(
       ALADIL_WEB_PATH,
-      "src/modules/home/components/sections/meetings/assets"
+      "src/modules/home/components/sections/meetings/assets",
     ),
     path.join(ALADIL_WEB_PATH, "src/modules/meetings/past/assets"),
     path.join(ALADIL_WEB_PATH, "src/modules/meetings/last/assets"),
@@ -295,14 +296,14 @@ async function uploadGeneralAssets() {
     {
       localPath: path.join(
         ALADIL_WEB_PATH,
-        "src/modules/home/components/sections/about/assets/background.jpeg"
+        "src/modules/home/components/sections/about/assets/background.jpeg",
       ),
       storagePath: "general/about-background.jpeg",
     },
     {
       localPath: path.join(
         ALADIL_WEB_PATH,
-        "src/modules/home/components/sections/main/assets/aladil_test.jpg"
+        "src/modules/home/components/sections/main/assets/aladil_test.jpg",
       ),
       storagePath: "general/hero-banner.jpg",
     },

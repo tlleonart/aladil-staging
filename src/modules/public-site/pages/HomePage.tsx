@@ -1,13 +1,19 @@
 import {
   ArrowRight,
+  Award,
   Calendar,
   Eye,
-  Mail,
+  Handshake,
+  HeartHandshake,
+  Lightbulb,
   MapPin,
   Newspaper,
+  Scale,
+  ShieldCheck,
   Target,
   Users,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,10 +25,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { prisma } from "@/modules/core/db";
+import { ContactSection } from "../components/ContactSection";
+import { HeroCarousel } from "../components/HeroCarousel";
+import { PartnersSection } from "../components/PartnersSection";
 
 // Fetch data for the home page
 async function getHomePageData() {
-  const [meetings, news, executiveMembers] = await Promise.all([
+  const [meetings, news, executiveMembers, laboratories] = await Promise.all([
     // Get latest 3 published meetings
     prisma.meeting.findMany({
       where: { status: "PUBLISHED" },
@@ -51,52 +60,22 @@ async function getHomePageData() {
         photoAsset: true,
       },
     }),
+    // Get all active labs for the map
+    prisma.lab.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+      include: {
+        logoAsset: true,
+      },
+    }),
   ]);
 
-  return { meetings, news, executiveMembers };
+  return { meetings, news, executiveMembers, laboratories };
 }
-
-// Hero Section Component
-const HeroSection = () => (
-  <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white py-24 md:py-32 overflow-hidden">
-    {/* Background Pattern */}
-    <div className="absolute inset-0 opacity-10">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.4%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')]" />
-    </div>
-    <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div className="text-center">
-        <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
-          ALADIL
-        </h1>
-        <p className="text-xl md:text-2xl text-blue-100 max-w-4xl mx-auto leading-relaxed">
-          Asociacion Latinoamericana de Directores de Instituciones de
-          Laboratorio
-        </p>
-        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-          <Button
-            asChild
-            size="lg"
-            className="bg-white text-blue-600 hover:bg-blue-50"
-          >
-            <Link href="/about">Conoce mas sobre nosotros</Link>
-          </Button>
-          <Button
-            asChild
-            size="lg"
-            variant="outline"
-            className="border-white text-white hover:bg-white/10"
-          >
-            <Link href="/contact">Contactanos</Link>
-          </Button>
-        </div>
-      </div>
-    </div>
-  </section>
-);
 
 // About Section Component
 const AboutSection = () => (
-  <section className="py-16 md:py-24 bg-gray-50">
+  <section id="quienes-somos" className="py-16 md:py-24 bg-gray-50">
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12">
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -146,13 +125,148 @@ const AboutSection = () => (
           </CardContent>
         </Card>
       </div>
-      <div className="text-center mt-10">
-        <Button asChild variant="outline">
-          <Link href="/about" className="gap-2">
-            Conoce mas sobre nuestra historia
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
+    </div>
+  </section>
+);
+
+// Values data
+const VALUES = [
+  {
+    icon: Award,
+    title: "Calidad",
+    description:
+      "Compromiso con los más altos estándares en servicios, procesos y tecnologías. Nuestros laboratorios miembros cumplen con normativas internacionales y se mantienen a la vanguardia de los avances científicos.",
+    color: "bg-blue-500",
+  },
+  {
+    icon: Handshake,
+    title: "Colaboración",
+    description:
+      "Promovemos el trabajo conjunto mediante el intercambio abierto entre laboratorios, profesionales e instituciones regionales para fortalecer el desarrollo diagnóstico.",
+    color: "bg-emerald-500",
+  },
+  {
+    icon: Eye,
+    title: "Transparencia",
+    description:
+      "Comunicación clara, abierta y accesible. Todas nuestras prácticas son visibles y comprensibles para nuestros miembros y la comunidad.",
+    color: "bg-cyan-500",
+  },
+  {
+    icon: Scale,
+    title: "Ética",
+    description:
+      "Actuamos con integridad, responsabilidad y respeto hacia pacientes, colaboradores y la sociedad en su conjunto.",
+    color: "bg-violet-500",
+  },
+  {
+    icon: HeartHandshake,
+    title: "Confianza",
+    description:
+      "Fundamento de nuestras relaciones institucionales, fomentando el apoyo mutuo entre miembros y la seguridad hacia las oportunidades de crecimiento.",
+    color: "bg-rose-500",
+  },
+  {
+    icon: Lightbulb,
+    title: "Innovación",
+    description:
+      "Enfoque estratégico en la adopción de tecnologías emergentes, desarrollo de metodologías avanzadas e investigación científica para la mejora continua.",
+    color: "bg-amber-500",
+  },
+];
+
+// Values Section Component
+const ValuesSection = () => (
+  <section className="py-16 md:py-24">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          Valores Institucionales
+        </h2>
+        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+          Los principios que guían nuestro trabajo y compromiso con la comunidad
+          científica latinoamericana
+        </p>
+      </div>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {VALUES.map((value) => (
+          <div
+            key={value.title}
+            className="group relative bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:border-gray-200 transition-all duration-300"
+          >
+            <div
+              className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${value.color} text-white mb-4 group-hover:scale-110 transition-transform duration-300`}
+            >
+              <value.icon className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {value.title}
+            </h3>
+            <p className="text-gray-600 leading-relaxed">{value.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+// History Section Component
+const HistorySection = () => (
+  <section className="py-16 md:py-24">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          Nuestra Historia
+        </h2>
+        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+          Más de dos décadas impulsando la excelencia en el diagnóstico clínico
+          en Latinoamérica
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
+        <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden shadow-lg">
+          <Image
+            src="/history.jpg"
+            alt="Fundadores de ALADIL durante la reunión inaugural en Viña del Mar, Chile, 2004"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+            className="object-cover hover:scale-105 transition-transform duration-700"
+          />
+        </div>
+
+        <div className="space-y-5">
+          <p className="text-base md:text-lg leading-relaxed text-gray-700">
+            En mayo de 2004, el Dr. Ivo Sapunar (1932–2023), destacado referente
+            del ámbito del diagnóstico clínico en Santiago de Chile, convocó a
+            una reunión en la ciudad de Viña del Mar con reconocidos
+            profesionales de la región: la Dra. Clara Corona de Lau, de
+            Biomédica de Referencia (Ciudad de México, México); el Dr. Alex
+            Colichón, de MedLab (Lima, Perú); el Dr. Fabián Fay, de Cibic
+            Laboratorios (Rosario, Argentina); y el Dr. Rui Maciel, de
+            Laboratorios Fleury (São Paulo, Brasil).
+          </p>
+          <p className="text-base md:text-lg leading-relaxed text-gray-700">
+            A partir de este encuentro, surgió la iniciativa de constituir una
+            asociación latinoamericana de laboratorios de análisis clínicos, con
+            el objetivo de fortalecer sus capacidades comerciales, promover la
+            innovación científica y fomentar el desarrollo profesional mediante
+            el intercambio de conocimientos, experiencias locales y casos de
+            éxito.
+          </p>
+          <p className="text-base md:text-lg leading-relaxed text-gray-700">
+            En 2004, en Viña del Mar, Chile, quedó formalmente constituida la
+            Asociación de Laboratorios de Diagnóstico Latinoamericanos (ALADIL).
+          </p>
+          <p className="text-base md:text-lg leading-relaxed text-gray-700">
+            Desde su creación, y a lo largo de más de dos décadas, ALADIL ha
+            sumado laboratorios de referencia en diversos países de la región.
+            La realización de más de 35 reuniones presenciales ha permitido
+            consolidar una red colaborativa que impulsa el crecimiento sostenido
+            y la mejora continua de todos sus miembros.
+          </p>
+        </div>
       </div>
     </div>
   </section>
@@ -400,42 +514,22 @@ const NewsSection = ({ news }: NewsSectionProps) => (
   </section>
 );
 
-// CTA Section Component
-const CTASection = () => (
-  <section className="py-16 md:py-24 bg-blue-600 text-white">
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-      <Mail className="h-12 w-12 mx-auto mb-6 text-blue-200" />
-      <h2 className="text-3xl md:text-4xl font-bold mb-4">Contactanos</h2>
-      <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-8">
-        Tienes preguntas sobre ALADIL o te gustaria unirte a nuestra red de
-        colaboracion cientifica? Estamos aqui para ayudarte.
-      </p>
-      <Button
-        asChild
-        size="lg"
-        className="bg-white text-blue-600 hover:bg-blue-50"
-      >
-        <Link href="/contact" className="gap-2">
-          Enviar mensaje
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </Button>
-    </div>
-  </section>
-);
-
 // Main HomePage Component
 export const HomePage = async () => {
-  const { meetings, news, executiveMembers } = await getHomePageData();
+  const { meetings, news, executiveMembers, laboratories } =
+    await getHomePageData();
 
   return (
     <div className="bg-white">
-      <HeroSection />
+      <HeroCarousel />
       <AboutSection />
+      <ValuesSection />
+      <HistorySection />
+      <PartnersSection laboratories={laboratories} />
       <MeetingsSection meetings={meetings} />
       <ExecutiveSection members={executiveMembers} />
       <NewsSection news={news} />
-      <CTASection />
+      <ContactSection />
     </div>
   );
 };
