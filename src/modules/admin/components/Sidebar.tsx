@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  AcademicCapIcon,
   BuildingOffice2Icon,
   CalendarIcon,
+  ChatBubbleLeftRightIcon,
   EnvelopeIcon,
   HomeIcon,
   NewspaperIcon,
@@ -19,6 +21,12 @@ const navigation = [
   { name: "Reuniones", href: "/admin/meetings", icon: CalendarIcon },
   { name: "Laboratorios", href: "/admin/labs", icon: BuildingOffice2Icon },
   { name: "Comité Ejecutivo", href: "/admin/executive", icon: UserGroupIcon },
+  { name: "Programa PILA", href: "/admin/pila", icon: AcademicCapIcon },
+  {
+    name: "Nuevas Tecnologías",
+    href: "/admin/new-tech",
+    icon: ChatBubbleLeftRightIcon,
+  },
   { name: "Usuarios", href: "/admin/users", icon: UsersIcon },
   { name: "Contacto", href: "/admin/contact", icon: EnvelopeIcon },
 ];

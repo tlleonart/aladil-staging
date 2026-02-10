@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { orpc } from "@/modules/core/orpc/client";
 import { useMutation, useQueryClient } from "@/modules/core/orpc/react";
@@ -22,6 +23,14 @@ export function UsersCreatePage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Agregar Nuevo Usuario</h1>
+
+      {createMutation.error && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {createMutation.error.message || "Error al crear el usuario"}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>

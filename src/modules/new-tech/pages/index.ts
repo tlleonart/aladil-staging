@@ -1,0 +1,1 @@
+export { NewTechPage } from "./NewTechPage";

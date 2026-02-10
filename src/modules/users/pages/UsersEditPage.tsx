@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { orpc } from "@/modules/core/orpc/client";
 import {
@@ -43,6 +44,14 @@ export function UsersEditPage({ id }: UsersEditPageProps) {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Editar Usuario</h1>
+
+      {updateMutation.error && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {updateMutation.error.message || "Error al actualizar el usuario"}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>

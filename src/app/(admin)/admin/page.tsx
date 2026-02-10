@@ -5,15 +5,23 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { prisma } from "@/modules/core/db";
 
-const stats = [
-  { name: "Noticias", value: "-", icon: NewspaperIcon },
-  { name: "Reuniones", value: "-", icon: CalendarIcon },
-  { name: "Laboratorios", value: "-", icon: BuildingOffice2Icon },
-  { name: "Comité Ejecutivo", value: "-", icon: UserGroupIcon },
-];
+export default async function DashboardPage() {
+  const [newsCount, meetingsCount, labsCount, executiveCount] =
+    await Promise.all([
+      prisma.newsPost.count(),
+      prisma.meeting.count(),
+      prisma.lab.count(),
+      prisma.executiveMember.count(),
+    ]);
 
-export default function DashboardPage() {
+  const stats = [
+    { name: "Noticias", value: newsCount, icon: NewspaperIcon },
+    { name: "Reuniones", value: meetingsCount, icon: CalendarIcon },
+    { name: "Laboratorios", value: labsCount, icon: BuildingOffice2Icon },
+    { name: "Comité Ejecutivo", value: executiveCount, icon: UserGroupIcon },
+  ];
   return (
     <div className="space-y-6">
       <div>
