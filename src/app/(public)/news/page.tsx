@@ -1,6 +1,8 @@
 import { NewsPage } from "@/modules/public-site/pages/NewsPage";
 import { generatePageMetadata } from "../metadata";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = generatePageMetadata({
   title: "Noticias",
   description:

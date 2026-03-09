@@ -1,6 +1,8 @@
 import { ExecutivePage } from "@/modules/public-site/pages/ExecutivePage";
 import { generatePageMetadata } from "../metadata";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = generatePageMetadata({
   title: "Comite Ejecutivo",
   description:

@@ -178,7 +178,8 @@ export const MeetingsForm = ({
                 />
               </FormControl>
               <FormDescription>
-                Se genera automáticamente del título. Puedes editarlo manualmente.
+                Se genera automáticamente del título. Puedes editarlo
+                manualmente.
               </FormDescription>
               <FormMessage />
             </FormItem>

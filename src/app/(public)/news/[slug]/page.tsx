@@ -4,6 +4,8 @@ import { generateArticleMetadata } from "@/app/(public)/metadata";
 import { prisma } from "@/modules/core/db";
 import { NewsDetailPage } from "@/modules/public-site/pages/NewsDetailPage";
 
+export const dynamic = "force-dynamic";
+
 interface NewsPageProps {
   params: Promise<{
     slug: string;

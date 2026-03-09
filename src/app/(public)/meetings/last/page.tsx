@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/modules/core/db";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Última Reunión | ALADIL",
   description:

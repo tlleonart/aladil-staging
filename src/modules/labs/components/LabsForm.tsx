@@ -137,7 +137,9 @@ export function LabsForm({
                     }
                   />
                 </FormControl>
-                <FormDescription>Los números menores aparecen primero</FormDescription>
+                <FormDescription>
+                  Los números menores aparecen primero
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

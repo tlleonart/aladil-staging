@@ -1,6 +1,8 @@
 import { MeetingsPage } from "@/modules/public-site/pages/MeetingsPage";
 import { generatePageMetadata } from "../metadata";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = generatePageMetadata({
   title: "Reuniones",
   description:

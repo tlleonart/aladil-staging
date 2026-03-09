@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/modules/core/db";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Reuniones Anteriores | ALADIL",
   description:

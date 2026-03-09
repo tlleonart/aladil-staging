@@ -1,6 +1,8 @@
 import { HomePage } from "@/modules/public-site/pages/HomePage";
 import { generatePageMetadata } from "./metadata";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = generatePageMetadata({
   title:
     "ALADIL - Asociacion Latinoamericana de Directores de Instituciones de Laboratorio",

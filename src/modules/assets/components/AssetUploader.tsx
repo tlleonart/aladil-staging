@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@supabase/supabase-js";
-import { ImageIcon, Loader2, Trash2, Upload, FileText } from "lucide-react";
+import { FileText, ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { orpc } from "@/modules/core/orpc/client";

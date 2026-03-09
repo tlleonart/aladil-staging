@@ -4,6 +4,8 @@ import { generateArticleMetadata } from "@/app/(public)/metadata";
 import { prisma } from "@/modules/core/db";
 import { MeetingDetailPage } from "@/modules/public-site/pages/MeetingDetailPage";
 
+export const dynamic = "force-dynamic";
+
 interface MeetingPageProps {
   params: Promise<{
     slug: string;

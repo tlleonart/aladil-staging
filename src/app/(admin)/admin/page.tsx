@@ -50,25 +50,30 @@ export default async function DashboardPage() {
           <CardTitle>Primeros Pasos</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-neutral-600">
-          <p>Usa la barra lateral para navegar entre las diferentes secciones:</p>
+          <p>
+            Usa la barra lateral para navegar entre las diferentes secciones:
+          </p>
           <ul className="mt-2 list-disc list-inside space-y-1">
             <li>
               <strong>Noticias</strong> - Administrar noticias del sitio web
             </li>
             <li>
-              <strong>Reuniones</strong> - Administrar reuniones anuales de ALADIL
+              <strong>Reuniones</strong> - Administrar reuniones anuales de
+              ALADIL
             </li>
             <li>
               <strong>Laboratorios</strong> - Administrar laboratorios miembros
             </li>
             <li>
-              <strong>Comité Ejecutivo</strong> - Administrar miembros del comité ejecutivo
+              <strong>Comité Ejecutivo</strong> - Administrar miembros del
+              comité ejecutivo
             </li>
             <li>
               <strong>Usuarios</strong> - Administrar usuarios y roles
             </li>
             <li>
-              <strong>Contacto</strong> - Ver mensajes del formulario de contacto
+              <strong>Contacto</strong> - Ver mensajes del formulario de
+              contacto
             </li>
           </ul>
         </CardContent>

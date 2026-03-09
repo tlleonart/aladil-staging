@@ -160,7 +160,9 @@ export function ExecutiveForm({
                     }
                   />
                 </FormControl>
-                <FormDescription>Los números menores aparecen primero</FormDescription>
+                <FormDescription>
+                  Los números menores aparecen primero
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

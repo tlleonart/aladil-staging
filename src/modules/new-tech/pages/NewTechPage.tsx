@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const NewTechPage = () => {
   return (
