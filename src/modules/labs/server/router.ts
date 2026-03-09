@@ -21,7 +21,11 @@ export const publicList = publicProcedure
   )
   .handler(async ({ input }) => {
     const labs = await prisma.lab.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        // Exclude internal ALADIL lab from public listing
+        id: { not: "00000000-0000-0000-0000-000000000001" },
+      },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       take: input.limit,
       include: {

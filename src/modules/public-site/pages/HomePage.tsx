@@ -59,9 +59,12 @@ async function getHomePageData() {
         photoAsset: true,
       },
     }),
-    // Get all active labs for the map
+    // Get all active labs for the map (exclude internal ALADIL lab)
     prisma.lab.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        id: { not: "00000000-0000-0000-0000-000000000001" },
+      },
       orderBy: { sortOrder: "asc" },
       include: {
         logoAsset: true,
