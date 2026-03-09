@@ -11,24 +11,66 @@ import {
   UserGroupIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { orpc } from "@/modules/core/orpc/client";
+import { useQuery } from "@/modules/core/orpc/react";
 
-const navigation = [
-  { name: "Panel", href: "/admin", icon: HomeIcon },
-  { name: "Noticias", href: "/admin/news", icon: NewspaperIcon },
-  { name: "Reuniones", href: "/admin/meetings", icon: CalendarIcon },
-  { name: "Laboratorios", href: "/admin/labs", icon: BuildingOffice2Icon },
-  { name: "Comité Ejecutivo", href: "/admin/executive", icon: UserGroupIcon },
+type NavItem = {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  /** Which roles can see this link. Omit = everyone */
+  roles?: Array<"admin" | "director" | "reporter">;
+};
+
+const navigation: NavItem[] = [
+  {
+    name: "Panel",
+    href: "/admin",
+    icon: HomeIcon,
+    roles: ["admin", "director"],
+  },
+  {
+    name: "Noticias",
+    href: "/admin/news",
+    icon: NewspaperIcon,
+    roles: ["admin", "director"],
+  },
+  {
+    name: "Reuniones",
+    href: "/admin/meetings",
+    icon: CalendarIcon,
+    roles: ["admin", "director"],
+  },
+  {
+    name: "Laboratorios",
+    href: "/admin/labs",
+    icon: BuildingOffice2Icon,
+    roles: ["admin", "director"],
+  },
+  {
+    name: "Comité Ejecutivo",
+    href: "/admin/executive",
+    icon: UserGroupIcon,
+    roles: ["admin", "director"],
+  },
   { name: "Programa PILA", href: "/admin/pila", icon: AcademicCapIcon },
   {
     name: "Nuevas Tecnologías",
     href: "/admin/new-tech",
     icon: ChatBubbleLeftRightIcon,
+    roles: ["admin", "director"],
   },
-  { name: "Usuarios", href: "/admin/users", icon: UsersIcon },
-  { name: "Contacto", href: "/admin/contact", icon: EnvelopeIcon },
+  { name: "Usuarios", href: "/admin/users", icon: UsersIcon, roles: ["admin"] },
+  {
+    name: "Contacto",
+    href: "/admin/contact",
+    icon: EnvelopeIcon,
+    roles: ["admin", "director"],
+  },
 ];
 
 interface SidebarProps {
@@ -39,12 +81,26 @@ interface SidebarProps {
 export const Sidebar = ({ open, onClose }: SidebarProps) => {
   const pathname = usePathname();
 
+  const { data: me } = useQuery({
+    queryKey: ["users", "me"],
+    queryFn: () => orpc.users.me({}),
+    staleTime: 5 * 60 * 1000, // cache for 5 min
+  });
+
+  const role = me?.effectiveRole ?? "reporter";
+
+  const visibleNav = navigation.filter(
+    (item) => !item.roles || item.roles.includes(role),
+  );
+
   return (
     <>
       {/* Mobile overlay */}
       {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden cursor-default"
           onClick={onClose}
         />
       )}
@@ -56,12 +112,26 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="flex h-16 items-center justify-center border-b border-neutral-200">
-          <h1 className="text-xl font-bold text-neutral-900">ALADIL Admin</h1>
+        <div className="flex h-16 items-center justify-center gap-3 border-b border-neutral-200 px-4">
+          <Image
+            src="/logo.png"
+            alt="ALADIL"
+            width={36}
+            height={36}
+            className="shrink-0"
+          />
+          <div className="flex flex-col leading-tight">
+            <span className="text-sm font-bold text-neutral-900 tracking-wide">
+              ALADIL
+            </span>
+            <span className="text-[10px] font-medium uppercase tracking-widest text-neutral-500">
+              Intranet
+            </span>
+          </div>
         </div>
 
         <nav className="mt-4 px-3 space-y-1">
-          {navigation.map((item) => {
+          {visibleNav.map((item) => {
             const isActive =
               pathname === item.href ||
               (item.href !== "/admin" && pathname.startsWith(item.href));

@@ -307,6 +307,91 @@ describe("CreateUserSchema", () => {
       expect(result.success).toBe(true);
     }
   });
+
+  it("should accept optional labId as valid UUID", () => {
+    const input = {
+      email: "user@example.com",
+      name: "User",
+      password: "securePassword123",
+      isActive: true,
+      isSuperAdmin: false,
+      labId: "550e8400-e29b-41d4-a716-446655440000",
+    };
+
+    const result = CreateUserSchema.safeParse(input);
+    expect(result.success).toBe(true);
+  });
+
+  it("should accept labId as null", () => {
+    const input = {
+      email: "user@example.com",
+      name: "User",
+      password: "securePassword123",
+      isActive: true,
+      isSuperAdmin: false,
+      labId: null,
+    };
+
+    const result = CreateUserSchema.safeParse(input);
+    expect(result.success).toBe(true);
+  });
+
+  it("should reject labId with invalid UUID", () => {
+    const input = {
+      email: "user@example.com",
+      name: "User",
+      password: "securePassword123",
+      isActive: true,
+      isSuperAdmin: false,
+      labId: "not-a-uuid",
+    };
+
+    const result = CreateUserSchema.safeParse(input);
+    expect(result.success).toBe(false);
+  });
+
+  it("should accept valid pilaRoleKey values", () => {
+    for (const key of ["lab_reporter", "pila_admin", "none"] as const) {
+      const input = {
+        email: "user@example.com",
+        name: "User",
+        password: "securePassword123",
+        isActive: true,
+        isSuperAdmin: false,
+        pilaRoleKey: key,
+      };
+
+      const result = CreateUserSchema.safeParse(input);
+      expect(result.success).toBe(true);
+    }
+  });
+
+  it("should reject invalid pilaRoleKey", () => {
+    const input = {
+      email: "user@example.com",
+      name: "User",
+      password: "securePassword123",
+      isActive: true,
+      isSuperAdmin: false,
+      pilaRoleKey: "invalid_role",
+    };
+
+    const result = CreateUserSchema.safeParse(input);
+    expect(result.success).toBe(false);
+  });
+
+  it("should accept without labId and pilaRoleKey (optional)", () => {
+    const input = {
+      email: "user@example.com",
+      name: "User",
+      password: "securePassword123",
+      isActive: true,
+      isSuperAdmin: false,
+    };
+
+    const result = CreateUserSchema.safeParse(input);
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("UpdateUserSchema", () => {
@@ -436,6 +521,28 @@ describe("UpdateUserSchema", () => {
 
     const result = UpdateUserSchema.safeParse(input);
     expect(result.success).toBe(true);
+  });
+
+  it("should allow updating labId", () => {
+    const result = UpdateUserSchema.safeParse({
+      labId: "550e8400-e29b-41d4-a716-446655440000",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("should allow setting labId to null", () => {
+    const result = UpdateUserSchema.safeParse({ labId: null });
+    expect(result.success).toBe(true);
+  });
+
+  it("should allow updating pilaRoleKey", () => {
+    const result = UpdateUserSchema.safeParse({ pilaRoleKey: "lab_reporter" });
+    expect(result.success).toBe(true);
+  });
+
+  it("should reject invalid pilaRoleKey in update", () => {
+    const result = UpdateUserSchema.safeParse({ pilaRoleKey: "super_admin" });
+    expect(result.success).toBe(false);
   });
 });
 

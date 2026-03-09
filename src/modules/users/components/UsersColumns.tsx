@@ -18,7 +18,39 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { User } from "../schemas";
+
+/** Shape returned by the users.list endpoint (matches userSelect) */
+interface UserRow {
+  id: string;
+  email: string;
+  name: string;
+  isActive: boolean;
+  isSuperAdmin: boolean;
+  labId: string | null;
+  lab: { id: string; name: string } | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  memberships: Array<{
+    project: { id: string; key: string; name: string };
+    role: { id: string; key: string; name: string };
+  }>;
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrador",
+  director: "Director",
+  reporter: "Reportador",
+  lab_reporter: "Reportador PILA",
+  pila_admin: "Admin PILA",
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  admin: "bg-purple-100 text-purple-800 hover:bg-purple-100",
+  director: "bg-blue-100 text-blue-800 hover:bg-blue-100",
+  reporter: "bg-gray-100 text-gray-800 hover:bg-gray-100",
+  lab_reporter: "bg-emerald-100 text-emerald-800 hover:bg-emerald-100",
+  pila_admin: "bg-amber-100 text-amber-800 hover:bg-amber-100",
+};
 
 interface UsersColumnsProps {
   onDelete: (id: string) => void;
@@ -30,7 +62,7 @@ export function getUsersColumns({
   onDelete,
   onToggleActive,
   currentUserId,
-}: UsersColumnsProps): ColumnDef<User>[] {
+}: UsersColumnsProps): ColumnDef<UserRow>[] {
   return [
     {
       accessorKey: "email",
@@ -48,17 +80,44 @@ export function getUsersColumns({
       },
     },
     {
-      accessorKey: "isSuperAdmin",
-      header: "Rol",
+      accessorKey: "lab",
+      header: "Laboratorio",
       cell: ({ row }) => {
-        const isSuperAdmin = row.getValue("isSuperAdmin") as boolean;
-        return isSuperAdmin ? (
-          <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">
-            <Shield className="mr-1 h-3 w-3" />
-            Super Admin
-          </Badge>
-        ) : (
-          <Badge variant="secondary">Usuario</Badge>
+        const lab = row.original.lab;
+        return lab?.name || <span className="text-muted-foreground">-</span>;
+      },
+    },
+    {
+      id: "roles",
+      header: "Roles",
+      cell: ({ row }) => {
+        const user = row.original;
+
+        if (user.isSuperAdmin) {
+          return (
+            <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">
+              <Shield className="mr-1 h-3 w-3" />
+              Super Admin
+            </Badge>
+          );
+        }
+
+        const memberships = user.memberships ?? [];
+        if (memberships.length === 0) {
+          return <span className="text-muted-foreground text-sm">Sin rol</span>;
+        }
+
+        return (
+          <div className="flex flex-wrap gap-1">
+            {memberships.map((m) => (
+              <Badge
+                key={m.project.key}
+                className={ROLE_COLORS[m.role.key] ?? ""}
+              >
+                {ROLE_LABELS[m.role.key] ?? m.role.name}
+              </Badge>
+            ))}
+          </div>
         );
       },
     },
@@ -72,14 +131,6 @@ export function getUsersColumns({
             {isActive ? "Activo" : "Inactivo"}
           </Badge>
         );
-      },
-    },
-    {
-      accessorKey: "createdAt",
-      header: "Creado",
-      cell: ({ row }) => {
-        const date = new Date(row.getValue("createdAt"));
-        return date.toLocaleDateString();
       },
     },
     {

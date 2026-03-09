@@ -14,7 +14,6 @@ import {
 } from "@/modules/core/orpc/react";
 import { ConfirmDialog, DataTable } from "@/modules/shared/ui";
 import { getUsersColumns } from "../components";
-import type { User } from "../schemas";
 
 export function UsersListPage() {
   const queryClient = useQueryClient();
@@ -68,11 +67,7 @@ export function UsersListPage() {
           <CardTitle>Todos los Usuarios</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={columns}
-            data={users as unknown as User[]}
-            isLoading={isLoading}
-          />
+          <DataTable columns={columns} data={users} isLoading={isLoading} />
         </CardContent>
       </Card>
 

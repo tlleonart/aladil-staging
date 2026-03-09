@@ -11,22 +11,31 @@ export const UserSchema = z.object({
 });
 
 export const CreateUserSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  name: z.string().min(1, "Name is required").max(255),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  email: z.string().email("Correo electrónico inválido"),
+  name: z.string().min(1, "Nombre requerido").max(255),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   isActive: z.boolean(),
-  isSuperAdmin: z.boolean(),
+  isSuperAdmin: z.boolean().default(false),
+  /** Lab is always required — every user belongs to a lab */
+  labId: z.string().uuid("Laboratorio requerido"),
+  /** Role on INTRANET project (controls sidebar visibility and general access) */
+  roleKey: z.enum(["admin", "director", "reporter"]).default("reporter"),
+  /** Role on PILA project (controls PILA-specific permissions) */
+  pilaRoleKey: z.enum(["lab_reporter", "pila_admin", "none"]).default("none"),
 });
 
 export const UpdateUserSchema = z.object({
-  email: z.string().email("Invalid email address").optional(),
+  email: z.string().email("Correo electrónico inválido").optional(),
   name: z.string().max(255).optional(),
   password: z
     .string()
-    .min(8, "Password must be at least 8 characters")
+    .min(8, "La contraseña debe tener al menos 8 caracteres")
     .optional(),
   isActive: z.boolean().optional(),
   isSuperAdmin: z.boolean().optional(),
+  labId: z.string().uuid("Laboratorio requerido").optional(),
+  roleKey: z.enum(["admin", "director", "reporter"]).optional(),
+  pilaRoleKey: z.enum(["lab_reporter", "pila_admin", "none"]).optional(),
 });
 
 export const ListUsersQuerySchema = z.object({

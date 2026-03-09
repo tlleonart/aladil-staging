@@ -34,6 +34,13 @@ enum ProjectKey {
   LABS
   EXEC_COMMITTEE
   SETTINGS
+  PILA
+}
+
+enum PilaReportStatus {
+  DRAFT
+  SUBMITTED
+  REVIEWED
 }
 
 //
@@ -67,11 +74,18 @@ model User {
   // assets uploaded by user
   uploadedAssets Asset[]
 
+  // PILA: lab association (for lab users who submit PILA reports)
+  labId         String?
+  lab           Lab?    @relation("LabUsers", fields: [labId], references: [id], onDelete: SetNull)
+  pilaReports        PilaReport[] @relation("PilaSubmitter")
+  pilaReviewedReports PilaReport[] @relation("PilaReviewer")
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@index([isActive])
   @@index([isSuperAdmin])
+  @@index([labId])
 }
 
 model Session {
@@ -228,6 +242,8 @@ model Lab {
 
   executiveMembers ExecutiveMember[]
   hostedMeetings   Meeting[] @relation("HostLab")
+  users            User[]    @relation("LabUsers")
+  pilaReports      PilaReport[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -412,6 +428,78 @@ model ContactMessage {
 
   @@index([status])
   @@index([createdAt])
+}
+
+// PILA indicator definitions (admin-configurable)
+model PilaIndicator {
+  id               String  @id @default(uuid())
+  code             String  @unique // "I-1", "I-3", etc.
+  name             String  // "Error de ingreso de pacientes"
+  formula          String  // "Errores / Ingresos manuales"
+  numeratorLabel   String  // "Errores por ingreso"
+  denominatorLabel String  // "Total ingresos manuales"
+  considerations   String? // Detailed criteria (long text)
+  exclusions       String? // What to exclude (long text)
+  sortOrder        Int     @default(0)
+  isActive         Boolean @default(true)
+
+  values           PilaReportValue[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// PILA monthly reports (one per lab per month)
+model PilaReport {
+  id            String           @id @default(uuid())
+
+  labId         String
+  lab           Lab              @relation(fields: [labId], references: [id], onDelete: Cascade)
+
+  submittedById String?
+  submittedBy   User?            @relation("PilaSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+
+  reviewedById  String?
+  reviewedBy    User?            @relation("PilaReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  year          Int
+  month         Int              // 1-12
+
+  status        PilaReportStatus @default(DRAFT)
+
+  values        PilaReportValue[]
+
+  notes         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  submittedAt   DateTime?
+  reviewedAt    DateTime?
+
+  @@unique([labId, year, month])
+  @@index([labId, year])
+  @@index([status])
+  @@index([year, month])
+}
+
+// PILA report values (numerator/denominator per indicator per report)
+model PilaReportValue {
+  id            String        @id @default(uuid())
+
+  reportId      String
+  report        PilaReport    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  indicatorId   String
+  indicator     PilaIndicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+
+  numerator     Float?
+  denominator   Float?
+
+  @@unique([reportId, indicatorId])
+  @@index([reportId])
+  @@index([indicatorId])
 }
 
 // Basic audit log (helps with admin actions)

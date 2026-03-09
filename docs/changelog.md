@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-03-08
+
+### Added
+- **Programa PILA - Data Model & RBAC**
+  - New `PilaReport` model with 11 quality indicators (I-1, I-3, I-5, I-6, I-8, I-9, I-11, I-13, I-14, I-15, I-17)
+  - Each indicator stores numerator and denominator for calculated ratios
+  - Unique constraint per lab/year/month (one report per lab per month)
+  - `PilaReportStatus` enum: DRAFT → SUBMITTED lifecycle
+
+- **User-Lab Association**
+  - Added optional `labId` field to `User` model
+  - Enables lab users to be linked to their laboratory for data ownership
+
+- **PILA RBAC System**
+  - New `PILA` project in ProjectKey enum
+  - 4 new permissions: `pila.submit`, `pila.read_own`, `pila.read_all`, `pila.manage`
+  - `lab_reporter` role: submit + read_own (lab users see only their lab's data)
+  - `pila_admin` role: full access to all PILA reports across all laboratories
+  - Admin role updated with all PILA permissions
+
+### PILA Indicators Reference
+| ID | Name | Calculation |
+|----|------|-------------|
+| I-1 | Error de ingreso de pacientes | Errores / ingresos manuales |
+| I-3 | Urocultivos contaminados | (Contaminados / total) × 100 |
+| I-5 | Rechazo de muestras | Rechazadas / total protocolos |
+| I-6 | Repetición por nueva muestra | Repeticiones / total pacientes |
+| I-8 | Respuesta de pacientes | Respuestas / encuestas enviadas |
+| I-9 | Informes demorados | Incumplimiento / total pacientes |
+| I-11 | Error de validación | Modificados / total validados |
+| I-13 | Ausentismo total | Días no trabajados / días laborables |
+| I-14 | Accidentes laborales | Inverso (accidentes / días del mes) |
+| I-15 | Rotación del personal | Desvinculados / total empleados |
+| I-17 | Llamadas atendidas | Atendidas / totales |
+
+---
+
 ## [0.4.1] - 2026-01-23
 
 ### Added

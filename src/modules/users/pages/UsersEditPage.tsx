@@ -12,6 +12,8 @@ import {
 import { UsersForm } from "../components";
 import type { UpdateUser } from "../schemas";
 
+const ALADIL_LAB_ID = "00000000-0000-0000-0000-000000000001";
+
 interface UsersEditPageProps {
   id: string;
 }
@@ -41,6 +43,14 @@ export function UsersEditPage({ id }: UsersEditPageProps) {
     return <div>Usuario no encontrado</div>;
   }
 
+  // Extract role keys from memberships
+  const intranetRole = user.memberships?.find(
+    (m) => m.project?.key === "INTRANET",
+  )?.role?.key as "admin" | "director" | "reporter" | undefined;
+
+  const pilaRole = user.memberships?.find((m) => m.project?.key === "PILA")
+    ?.role?.key as "lab_reporter" | "pila_admin" | undefined;
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Editar Usuario</h1>
@@ -65,6 +75,9 @@ export function UsersEditPage({ id }: UsersEditPageProps) {
               password: "",
               isActive: user.isActive,
               isSuperAdmin: user.isSuperAdmin,
+              labId: user.labId || ALADIL_LAB_ID,
+              roleKey: intranetRole ?? "reporter",
+              pilaRoleKey: pilaRole ?? "none",
             }}
             onSubmit={(data) => updateMutation.mutate(data as UpdateUser)}
             isLoading={updateMutation.isPending}

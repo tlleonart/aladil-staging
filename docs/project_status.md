@@ -60,9 +60,34 @@
 
 ---
 
+### Phase 5: Programa PILA (In Progress)
+
+| Task | Status |
+|------|--------|
+| PilaIndicator model (configurable, DB-stored) | Done |
+| PilaReport + PilaReportValue models | Done |
+| PILA ProjectKey + PilaReportStatus enum | Done |
+| User-Lab association (labId on User) | Done |
+| PILA permissions (submit, read_own, read_all, manage) | Done |
+| PILA roles (lab_reporter, pila_admin) | Done |
+| 11 indicators seeded with full metadata | Done |
+| PILA ORPC router + dual authorization | Done |
+| PILA schemas (Zod validation) | Done |
+| Indicator CRUD (admin: create/edit/toggle/delete) | Done |
+| Lab reporter: list reports, create, edit, submit | Done |
+| Lab reporter: pending report notification | Done |
+| Admin: all reports view with filters + stats | Done |
+| Admin: reopen/delete reports | Done |
+| Admin: indicators management page | Done |
+| User-Lab assignment UI | Pending |
+| PILA role assignment to users | Pending |
+| Tests | Pending |
+
+---
+
 ## Upcoming Phase
 
-### Phase 5: Polish & Deploy
+### Phase 6: Polish & Deploy
 - [ ] Password reset flow
 - [ ] Email notifications
 - [ ] Observability (logging + audit)
@@ -92,6 +117,9 @@
 | Asset | type, bucket, path, filename | Schema ready |
 | ContactMessage | name, email, message | Schema ready |
 | AuditEvent | action, entity, metadata | Schema ready |
+| PilaIndicator | code, name, formula, labels, considerations, exclusions | Schema ready |
+| PilaReport | labId, year, month, status, notes | Schema ready |
+| PilaReportValue | reportId, indicatorId, numerator, denominator | Schema ready |
 
 ---
 

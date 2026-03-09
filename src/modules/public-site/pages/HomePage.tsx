@@ -9,7 +9,6 @@ import {
   MapPin,
   Newspaper,
   Scale,
-  ShieldCheck,
   Target,
   Users,
 } from "lucide-react";
@@ -528,7 +527,7 @@ export const HomePage = async () => {
       <PartnersSection laboratories={laboratories} />
       <MeetingsSection meetings={meetings} />
       <ExecutiveSection members={executiveMembers} />
-      <NewsSection news={news} />
+      {news.length >= 3 && <NewsSection news={news} />}
       <ContactSection />
     </div>
   );
