@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { orpc } from "@/modules/core/orpc/client";
@@ -11,6 +12,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@/modules/core/orpc/react";
+import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
 import { ConfirmDialog, DataTable } from "@/modules/shared/ui";
 import { getNewsColumns } from "../components";
 import type { NewsPost } from "../schemas";
@@ -19,7 +21,11 @@ export function NewsListPage() {
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: posts = [], isLoading } = useQuery({
+  const {
+    data: posts = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["news", "list"],
     queryFn: () => orpc.news.list({ limit: 100 }),
   });
@@ -29,6 +35,10 @@ export function NewsListPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["news"] });
       setDeleteId(null);
+      toast.success("Noticia eliminada correctamente");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al eliminar la noticia"));
     },
   });
 
@@ -36,6 +46,10 @@ export function NewsListPage() {
     mutationFn: (id: string) => orpc.news.publish({ id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["news"] });
+      toast.success("Noticia publicada correctamente");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al publicar la noticia"));
     },
   });
 
@@ -43,6 +57,10 @@ export function NewsListPage() {
     mutationFn: (id: string) => orpc.news.archive({ id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["news"] });
+      toast.success("Noticia archivada correctamente");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al archivar la noticia"));
     },
   });
 
@@ -55,6 +73,19 @@ export function NewsListPage() {
       }),
     [publishMutation, archiveMutation],
   );
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Noticias</h1>
+        <Card>
+          <CardContent className="py-10 text-center text-red-600">
+            <p>Error al cargar las noticias: {getErrorMessage(error)}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

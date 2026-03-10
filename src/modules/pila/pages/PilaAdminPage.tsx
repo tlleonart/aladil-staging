@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -24,6 +25,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@/modules/core/orpc/react";
+import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
 import { ConfirmDialog } from "@/modules/shared/ui";
 import { PilaStatusBadge } from "../components";
 
@@ -75,6 +77,10 @@ export function PilaAdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pila"] });
       setDeleteId(null);
+      toast.success("Reporte eliminado correctamente");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al eliminar el reporte"));
     },
   });
 
@@ -83,6 +89,10 @@ export function PilaAdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pila"] });
       setReopenId(null);
+      toast.success("Reporte reabierto correctamente");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al reabrir el reporte"));
     },
   });
 
@@ -90,6 +100,10 @@ export function PilaAdminPage() {
     mutationFn: (id: string) => orpc.pila.markReviewed({ id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pila"] });
+      toast.success("Reporte marcado como revisado");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al marcar como revisado"));
     },
   });
 

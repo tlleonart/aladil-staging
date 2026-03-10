@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { orpc } from "@/modules/core/orpc/client";
@@ -11,6 +12,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@/modules/core/orpc/react";
+import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
 import { ConfirmDialog, DataTable } from "@/modules/shared/ui";
 import { getExecutiveColumns } from "../components";
 import type { ExecutiveMember } from "../schemas";
@@ -19,7 +21,11 @@ export function ExecutiveListPage() {
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: members = [], isLoading } = useQuery({
+  const {
+    data: members = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["executive", "list"],
     queryFn: () => orpc.executive.list({ limit: 100 }),
   });
@@ -29,6 +35,10 @@ export function ExecutiveListPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["executive"] });
       setDeleteId(null);
+      toast.success("Miembro eliminado correctamente");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al eliminar el miembro"));
     },
   });
 
@@ -36,6 +46,10 @@ export function ExecutiveListPage() {
     mutationFn: (id: string) => orpc.executive.toggleActive({ id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["executive"] });
+      toast.success("Estado actualizado");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al cambiar el estado"));
     },
   });
 
@@ -47,6 +61,19 @@ export function ExecutiveListPage() {
       }),
     [toggleActiveMutation],
   );
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Comité Ejecutivo</h1>
+        <Card>
+          <CardContent className="py-10 text-center text-red-600">
+            <p>Error al cargar los miembros: {getErrorMessage(error)}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -30,49 +30,54 @@ import { PartnersSection } from "../components/PartnersSection";
 
 // Fetch data for the home page
 async function getHomePageData() {
-  const [meetings, news, executiveMembers, laboratories] = await Promise.all([
-    // Get latest 3 published meetings
-    prisma.meeting.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: { startDate: "desc" },
-      take: 3,
-      include: {
-        coverAsset: true,
-      },
-    }),
-    // Get latest 3 published news posts
-    prisma.newsPost.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: { publishedAt: "desc" },
-      take: 3,
-      include: {
-        coverAsset: true,
-      },
-    }),
-    // Get first 4 active executive members
-    prisma.executiveMember.findMany({
-      where: { isActive: true },
-      orderBy: [{ sortOrder: "asc" }, { fullName: "asc" }],
-      take: 4,
-      include: {
-        lab: { select: { id: true, name: true } },
-        photoAsset: true,
-      },
-    }),
-    // Get all active labs for the map (exclude internal ALADIL lab)
-    prisma.lab.findMany({
-      where: {
-        isActive: true,
-        id: { not: "00000000-0000-0000-0000-000000000001" },
-      },
-      orderBy: { sortOrder: "asc" },
-      include: {
-        logoAsset: true,
-      },
-    }),
-  ]);
+  try {
+    const [meetings, news, executiveMembers, laboratories] = await Promise.all([
+      // Get latest 3 published meetings
+      prisma.meeting.findMany({
+        where: { status: "PUBLISHED" },
+        orderBy: { startDate: "desc" },
+        take: 3,
+        include: {
+          coverAsset: true,
+        },
+      }),
+      // Get latest 3 published news posts
+      prisma.newsPost.findMany({
+        where: { status: "PUBLISHED" },
+        orderBy: { publishedAt: "desc" },
+        take: 3,
+        include: {
+          coverAsset: true,
+        },
+      }),
+      // Get first 4 active executive members
+      prisma.executiveMember.findMany({
+        where: { isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { fullName: "asc" }],
+        take: 4,
+        include: {
+          lab: { select: { id: true, name: true } },
+          photoAsset: true,
+        },
+      }),
+      // Get all active labs for the map (exclude internal ALADIL lab)
+      prisma.lab.findMany({
+        where: {
+          isActive: true,
+          id: { not: "00000000-0000-0000-0000-000000000001" },
+        },
+        orderBy: { sortOrder: "asc" },
+        include: {
+          logoAsset: true,
+        },
+      }),
+    ]);
 
-  return { meetings, news, executiveMembers, laboratories };
+    return { meetings, news, executiveMembers, laboratories };
+  } catch (error) {
+    console.error("Error fetching homepage data:", error);
+    return { meetings: [], news: [], executiveMembers: [], laboratories: [] };
+  }
 }
 
 // About Section Component

@@ -1,10 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { orpc } from "@/modules/core/orpc/client";
 import { useMutation, useQueryClient } from "@/modules/core/orpc/react";
+import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
 import { UsersForm } from "../components";
 import type { CreateUser } from "../schemas";
 
@@ -16,7 +18,11 @@ export function UsersCreatePage() {
     mutationFn: (data: CreateUser) => orpc.users.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Usuario creado correctamente");
       router.push("/admin/users");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al crear el usuario"));
     },
   });
 
@@ -27,7 +33,7 @@ export function UsersCreatePage() {
       {createMutation.error && (
         <Alert variant="destructive">
           <AlertDescription>
-            {createMutation.error.message || "Error al crear el usuario"}
+            {getErrorMessage(createMutation.error, "Error al crear el usuario")}
           </AlertDescription>
         </Alert>
       )}

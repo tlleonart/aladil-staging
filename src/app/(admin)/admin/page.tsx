@@ -8,13 +8,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/modules/core/db";
 
 export default async function DashboardPage() {
-  const [newsCount, meetingsCount, labsCount, executiveCount] =
-    await Promise.all([
+  let newsCount = 0;
+  let meetingsCount = 0;
+  let labsCount = 0;
+  let executiveCount = 0;
+
+  try {
+    [newsCount, meetingsCount, labsCount, executiveCount] = await Promise.all([
       prisma.newsPost.count(),
       prisma.meeting.count(),
       prisma.lab.count(),
       prisma.executiveMember.count(),
     ]);
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+  }
 
   const stats = [
     { name: "Noticias", value: newsCount, icon: NewspaperIcon },

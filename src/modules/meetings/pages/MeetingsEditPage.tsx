@@ -1,6 +1,9 @@
 "use client";
 
+import { AlertCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { orpc } from "@/modules/core/orpc/client";
 import {
@@ -8,6 +11,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@/modules/core/orpc/react";
+import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
 import { MeetingsForm } from "../components";
 import type { CreateMeeting } from "../schemas";
 
@@ -19,7 +23,11 @@ export function MeetingsEditPage({ id }: MeetingsEditPageProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data: meeting, isLoading } = useQuery({
+  const {
+    data: meeting,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["meetings", "detail", id],
     queryFn: () => orpc.meetings.getById({ id }),
   });
@@ -29,16 +37,36 @@ export function MeetingsEditPage({ id }: MeetingsEditPageProps) {
       orpc.meetings.update({ id, data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      toast.success("Reunión actualizada correctamente");
       router.push("/admin/meetings");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al actualizar la reunión"));
     },
   });
 
   if (isLoading) {
-    return <div>Cargando...</div>;
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+      </div>
+    );
   }
 
-  if (!meeting) {
-    return <div>Reunión no encontrada</div>;
+  if (error || !meeting) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Editar Reunión</h1>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error
+              ? getErrorMessage(error, "Error al cargar la reunión")
+              : "Reunión no encontrada"}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   // Format dates for the form
@@ -51,6 +79,17 @@ export function MeetingsEditPage({ id }: MeetingsEditPageProps) {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Editar Reunión</h1>
+
+      {updateMutation.error && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {getErrorMessage(
+              updateMutation.error,
+              "Error al actualizar la reunión",
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>

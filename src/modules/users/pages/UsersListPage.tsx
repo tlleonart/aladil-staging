@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/modules/core/auth/auth-client";
@@ -12,6 +13,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@/modules/core/orpc/react";
+import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
 import { ConfirmDialog, DataTable } from "@/modules/shared/ui";
 import { getUsersColumns } from "../components";
 
@@ -20,7 +22,11 @@ export function UsersListPage() {
   const { data: session } = useSession();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: users = [], isLoading } = useQuery({
+  const {
+    data: users = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["users", "list"],
     queryFn: () => orpc.users.list({ limit: 100 }),
   });
@@ -30,6 +36,10 @@ export function UsersListPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setDeleteId(null);
+      toast.success("Usuario eliminado correctamente");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al eliminar el usuario"));
     },
   });
 
@@ -37,6 +47,10 @@ export function UsersListPage() {
     mutationFn: (id: string) => orpc.users.toggleActive({ id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Estado actualizado");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al cambiar el estado"));
     },
   });
 
@@ -49,6 +63,19 @@ export function UsersListPage() {
       }),
     [toggleActiveMutation, session?.user?.id],
   );
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Usuarios</h1>
+        <Card>
+          <CardContent className="py-10 text-center text-red-600">
+            <p>Error al cargar los usuarios: {getErrorMessage(error)}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

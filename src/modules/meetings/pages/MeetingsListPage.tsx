@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { orpc } from "@/modules/core/orpc/client";
@@ -11,6 +12,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@/modules/core/orpc/react";
+import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
 import { ConfirmDialog, DataTable } from "@/modules/shared/ui";
 import { getMeetingsColumns } from "../components";
 import type { Meeting } from "../schemas";
@@ -19,7 +21,11 @@ export function MeetingsListPage() {
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: meetings = [], isLoading } = useQuery({
+  const {
+    data: meetings = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["meetings", "list"],
     queryFn: () => orpc.meetings.list({ limit: 100 }),
   });
@@ -29,6 +35,10 @@ export function MeetingsListPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       setDeleteId(null);
+      toast.success("Reunión eliminada correctamente");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al eliminar la reunión"));
     },
   });
 
@@ -36,6 +46,10 @@ export function MeetingsListPage() {
     mutationFn: (id: string) => orpc.meetings.publish({ id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      toast.success("Reunión publicada correctamente");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al publicar la reunión"));
     },
   });
 
@@ -43,6 +57,10 @@ export function MeetingsListPage() {
     mutationFn: (id: string) => orpc.meetings.archive({ id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      toast.success("Reunión archivada correctamente");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al archivar la reunión"));
     },
   });
 
@@ -55,6 +73,19 @@ export function MeetingsListPage() {
       }),
     [publishMutation, archiveMutation],
   );
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Reuniones</h1>
+        <Card>
+          <CardContent className="py-10 text-center text-red-600">
+            <p>Error al cargar las reuniones: {getErrorMessage(error)}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

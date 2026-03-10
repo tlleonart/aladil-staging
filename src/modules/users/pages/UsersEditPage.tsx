@@ -1,6 +1,8 @@
 "use client";
 
+import { AlertCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { orpc } from "@/modules/core/orpc/client";
@@ -9,6 +11,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@/modules/core/orpc/react";
+import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
 import { UsersForm } from "../components";
 import type { UpdateUser } from "../schemas";
 
@@ -22,7 +25,11 @@ export function UsersEditPage({ id }: UsersEditPageProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading } = useQuery({
+  const {
+    data: user,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["users", "detail", id],
     queryFn: () => orpc.users.getById({ id }),
   });
@@ -31,16 +38,36 @@ export function UsersEditPage({ id }: UsersEditPageProps) {
     mutationFn: (data: UpdateUser) => orpc.users.update({ id, data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Usuario actualizado correctamente");
       router.push("/admin/users");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al actualizar el usuario"));
     },
   });
 
   if (isLoading) {
-    return <div>Cargando...</div>;
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+      </div>
+    );
   }
 
-  if (!user) {
-    return <div>Usuario no encontrado</div>;
+  if (error || !user) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Editar Usuario</h1>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error
+              ? getErrorMessage(error, "Error al cargar el usuario")
+              : "Usuario no encontrado"}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   // Extract role keys from memberships
@@ -58,7 +85,10 @@ export function UsersEditPage({ id }: UsersEditPageProps) {
       {updateMutation.error && (
         <Alert variant="destructive">
           <AlertDescription>
-            {updateMutation.error.message || "Error al actualizar el usuario"}
+            {getErrorMessage(
+              updateMutation.error,
+              "Error al actualizar el usuario",
+            )}
           </AlertDescription>
         </Alert>
       )}

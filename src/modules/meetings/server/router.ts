@@ -178,6 +178,13 @@ export const remove = withPermission("meetings.delete")
 export const publish = withPermission("meetings.update")
   .input(z.object({ id: z.string().uuid() }))
   .handler(async ({ input }) => {
+    const existing = await prisma.meeting.findUnique({
+      where: { id: input.id },
+    });
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Reunión no encontrada" });
+    }
+
     const meeting = await prisma.meeting.update({
       where: { id: input.id },
       data: {
@@ -193,6 +200,13 @@ export const publish = withPermission("meetings.update")
 export const archive = withPermission("meetings.update")
   .input(z.object({ id: z.string().uuid() }))
   .handler(async ({ input }) => {
+    const existing = await prisma.meeting.findUnique({
+      where: { id: input.id },
+    });
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Reunión no encontrada" });
+    }
+
     const meeting = await prisma.meeting.update({
       where: { id: input.id },
       data: { status: "ARCHIVED" },

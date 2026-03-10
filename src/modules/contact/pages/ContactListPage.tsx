@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -15,6 +16,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@/modules/core/orpc/react";
+import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
 import { DataTable } from "@/modules/shared/ui";
 import { ContactDetailDialog, getContactColumns } from "../components";
 import type { ContactMessage } from "../schemas";
@@ -39,10 +41,12 @@ export const ContactListPage = () => {
     mutationFn: (id: string) => orpc.contact.markAsRead({ id }),
     onSuccess: (updatedMessage) => {
       queryClient.invalidateQueries({ queryKey: ["contact"] });
-      // Update the dialog state with the new status
       if (viewMessage && viewMessage.id === updatedMessage.id) {
         setViewMessage({ ...viewMessage, status: "READ" });
       }
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al marcar como leído"));
     },
   });
 
@@ -50,10 +54,13 @@ export const ContactListPage = () => {
     mutationFn: (id: string) => orpc.contact.archive({ id }),
     onSuccess: (updatedMessage) => {
       queryClient.invalidateQueries({ queryKey: ["contact"] });
-      // Update the dialog state with the new status
       if (viewMessage && viewMessage.id === updatedMessage.id) {
         setViewMessage({ ...viewMessage, status: "ARCHIVED" });
       }
+      toast.success("Mensaje archivado");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al archivar el mensaje"));
     },
   });
 
@@ -61,10 +68,13 @@ export const ContactListPage = () => {
     mutationFn: (id: string) => orpc.contact.unarchive({ id }),
     onSuccess: (updatedMessage) => {
       queryClient.invalidateQueries({ queryKey: ["contact"] });
-      // Update the dialog state with the new status
       if (viewMessage && viewMessage.id === updatedMessage.id) {
         setViewMessage({ ...viewMessage, status: "READ" });
       }
+      toast.success("Mensaje restaurado");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Error al restaurar el mensaje"));
     },
   });
 

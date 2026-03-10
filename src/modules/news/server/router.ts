@@ -154,6 +154,13 @@ export const remove = withPermission("news.delete")
 export const publish = withPermission("news.publish")
   .input(z.object({ id: z.string().uuid() }))
   .handler(async ({ input }) => {
+    const existing = await prisma.newsPost.findUnique({
+      where: { id: input.id },
+    });
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Noticia no encontrada" });
+    }
+
     const post = await prisma.newsPost.update({
       where: { id: input.id },
       data: {
@@ -169,6 +176,13 @@ export const publish = withPermission("news.publish")
 export const archive = withPermission("news.publish")
   .input(z.object({ id: z.string().uuid() }))
   .handler(async ({ input }) => {
+    const existing = await prisma.newsPost.findUnique({
+      where: { id: input.id },
+    });
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Noticia no encontrada" });
+    }
+
     const post = await prisma.newsPost.update({
       where: { id: input.id },
       data: { status: "ARCHIVED" },
