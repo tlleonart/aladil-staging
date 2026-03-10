@@ -33,13 +33,23 @@ export const LoginPage = () => {
       });
 
       if (error) {
-        setError(error.message || "Credenciales inválidas");
+        // Better Auth returns English messages; translate common ones
+        const msg = error.message?.toLowerCase() || "";
+        if (msg.includes("invalid") || msg.includes("password") || msg.includes("email")) {
+          setError("Correo electrónico o contraseña incorrectos");
+        } else {
+          setError(error.message || "Credenciales inválidas");
+        }
       } else {
         router.push("/admin");
         router.refresh();
       }
-    } catch (_err) {
-      setError("Ocurrió un error inesperado");
+    } catch (err) {
+      const message =
+        err instanceof TypeError && err.message.includes("fetch")
+          ? "No se pudo conectar con el servidor. Verifica tu conexión."
+          : "Ocurrió un error inesperado. Intenta nuevamente.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
