@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  ChangePasswordSchema,
   CreateUserSchema,
   ListUsersQuerySchema,
+  UpdateProfileSchema,
   UpdateUserSchema,
   UserSchema,
 } from "./schemas";
@@ -505,5 +507,98 @@ describe("ListUsersQuerySchema", () => {
       expect(result.data.limit).toBe(25);
       expect(result.data.cursor).toBe(VALID_UUID);
     }
+  });
+});
+
+describe("UpdateProfileSchema", () => {
+  it("should accept a valid name", () => {
+    const result = UpdateProfileSchema.safeParse({ name: "Juan Pérez" });
+    expect(result.success).toBe(true);
+  });
+
+  it("should reject empty name", () => {
+    const result = UpdateProfileSchema.safeParse({ name: "" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe("Nombre requerido");
+    }
+  });
+
+  it("should reject name over 255 characters", () => {
+    const result = UpdateProfileSchema.safeParse({ name: "a".repeat(256) });
+    expect(result.success).toBe(false);
+  });
+
+  it("should accept name exactly 255 characters", () => {
+    const result = UpdateProfileSchema.safeParse({ name: "a".repeat(255) });
+    expect(result.success).toBe(true);
+  });
+
+  it("should reject missing name", () => {
+    const result = UpdateProfileSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("ChangePasswordSchema", () => {
+  it("should accept valid current and new passwords", () => {
+    const result = ChangePasswordSchema.safeParse({
+      currentPassword: "oldPass123",
+      newPassword: "newPass456",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("should reject empty current password", () => {
+    const result = ChangePasswordSchema.safeParse({
+      currentPassword: "",
+      newPassword: "newPass456",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe(
+        "Contraseña actual requerida",
+      );
+    }
+  });
+
+  it("should reject new password under 8 characters", () => {
+    const result = ChangePasswordSchema.safeParse({
+      currentPassword: "oldPass123",
+      newPassword: "short",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe(
+        "La nueva contraseña debe tener al menos 8 caracteres",
+      );
+    }
+  });
+
+  it("should accept new password exactly 8 characters", () => {
+    const result = ChangePasswordSchema.safeParse({
+      currentPassword: "oldPass123",
+      newPassword: "12345678",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("should reject missing currentPassword", () => {
+    const result = ChangePasswordSchema.safeParse({
+      newPassword: "newPass456",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("should reject missing newPassword", () => {
+    const result = ChangePasswordSchema.safeParse({
+      currentPassword: "oldPass123",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("should reject empty object", () => {
+    const result = ChangePasswordSchema.safeParse({});
+    expect(result.success).toBe(false);
   });
 });

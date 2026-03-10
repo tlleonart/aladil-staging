@@ -1,6 +1,7 @@
 "use client";
 
 import { Bars3Icon } from "@heroicons/react/24/outline";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,6 +68,9 @@ export const Header = ({ user, onMenuClick }: HeaderProps) => {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/admin/profile">Mi Perfil</Link>
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
             Cerrar sesión
           </DropdownMenuItem>

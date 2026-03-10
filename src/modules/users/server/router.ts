@@ -7,8 +7,10 @@ import {
   protectedProcedure,
 } from "@/modules/core/orpc/server";
 import {
+  ChangePasswordSchema,
   CreateUserSchema,
   ListUsersQuerySchema,
+  UpdateProfileSchema,
   UpdateUserSchema,
 } from "../schemas";
 
@@ -313,6 +315,50 @@ export const me = protectedProcedure.handler(async ({ context }) => {
   };
 });
 
+// Update own profile (any authenticated user)
+export const updateProfile = protectedProcedure
+  .input(UpdateProfileSchema)
+  .handler(async ({ input, context }) => {
+    await prisma.user.update({
+      where: { id: context.user.id },
+      data: { name: input.name },
+    });
+    return { success: true };
+  });
+
+// Change own password (any authenticated user)
+export const changePassword = protectedProcedure
+  .input(ChangePasswordSchema)
+  .handler(async ({ input, context }) => {
+    const account = await prisma.account.findFirst({
+      where: { userId: context.user.id, providerId: "credential" },
+    });
+
+    if (!account?.password) {
+      throw new ORPCError("BAD_REQUEST", {
+        message: "No se encontró una cuenta con contraseña",
+      });
+    }
+
+    const isValid = await bcrypt.compare(
+      input.currentPassword,
+      account.password,
+    );
+    if (!isValid) {
+      throw new ORPCError("BAD_REQUEST", {
+        message: "La contraseña actual es incorrecta",
+      });
+    }
+
+    const hashed = await bcrypt.hash(input.newPassword, 12);
+    await prisma.account.update({
+      where: { id: account.id },
+      data: { password: hashed },
+    });
+
+    return { success: true };
+  });
+
 export const usersRouter = {
   list,
   getById,
@@ -321,4 +367,6 @@ export const usersRouter = {
   remove,
   toggleActive,
   me,
+  updateProfile,
+  changePassword,
 };
