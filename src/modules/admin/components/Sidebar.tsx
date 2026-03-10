@@ -81,13 +81,16 @@ interface SidebarProps {
 export const Sidebar = ({ open, onClose }: SidebarProps) => {
   const pathname = usePathname();
 
-  const { data: me } = useQuery({
+  const { data: me, isLoading } = useQuery({
     queryKey: ["users", "me"],
     queryFn: () => orpc.users.me({}),
     staleTime: 5 * 60 * 1000, // cache for 5 min
+    retry: 2,
   });
 
-  const role = me?.effectiveRole ?? "reporter";
+  // While loading or on error, show all items to avoid flash of restricted nav.
+  // The server-side RBAC still protects each endpoint independently.
+  const role = isLoading ? "admin" : (me?.effectiveRole ?? "admin");
 
   const visibleNav = navigation.filter(
     (item) => !item.roles || item.roles.includes(role),
