@@ -2,6 +2,7 @@
 
 import {
   CheckCircle,
+  Download,
   FileBarChart,
   RotateCcw,
   Settings,
@@ -29,6 +30,8 @@ import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
 import { ConfirmDialog } from "@/modules/shared/ui";
 import { PilaStatusBadge } from "../components";
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+
 const MONTHS = [
   "Enero",
   "Febrero",
@@ -46,6 +49,98 @@ const MONTHS = [
 
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 7 }, (_, i) => currentYear - 5 + i);
+
+function PublishedReportsAdmin() {
+  const queryClient = useQueryClient();
+  const { data: published = [], isLoading } = useQuery({
+    queryKey: ["pila", "published"],
+    queryFn: () => orpc.pila.listPublished({}),
+  });
+
+  const unpublishMutation = useMutation({
+    mutationFn: (id: string) => orpc.pila.unpublishReport({ id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pila", "published"] });
+      toast.success("Informe eliminado");
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Informes Publicados</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground mb-4">
+          Informes mensuales disponibles para descarga por los laboratorios.
+          Publicá nuevos desde{" "}
+          <Link
+            href="/admin/pila/reports"
+            className="underline font-medium hover:text-neutral-900"
+          >
+            Informes
+          </Link>
+          .
+        </p>
+        {isLoading ? (
+          <p className="text-center text-muted-foreground py-4">Cargando...</p>
+        ) : published.length === 0 ? (
+          <p className="text-center text-muted-foreground py-4">
+            No hay informes publicados.
+          </p>
+        ) : (
+          <div className="grid gap-3">
+            {published.map((report) => (
+              <div
+                key={report.id}
+                className="flex items-center justify-between rounded-lg border p-4"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="text-center min-w-[60px]">
+                    <div className="text-2xl font-bold">
+                      {String(report.month).padStart(2, "0")}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {MONTHS[report.month - 1]} {report.year}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Publicado por {report.publishedBy?.name ?? "Admin"} el{" "}
+                      {new Date(report.createdAt).toLocaleDateString("es")}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <a
+                      href={`${supabaseUrl}/storage/v1/object/public/assets/${report.storagePath}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      PDF
+                    </a>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600"
+                    onClick={() => unpublishMutation.mutate(report.id)}
+                    disabled={unpublishMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export function PilaAdminPage() {
   const [year, setYear] = useState(currentYear);
@@ -324,6 +419,9 @@ export function PilaAdminPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Published reports */}
+      <PublishedReportsAdmin />
 
       <ConfirmDialog
         open={!!deleteId}

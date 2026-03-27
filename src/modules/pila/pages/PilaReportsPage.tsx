@@ -1,6 +1,5 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
 import { ArrowLeft, Download, FileDown, Loader2, Upload } from "lucide-react";
 import Link from "next/link";
 import { Fragment, useState } from "react";
@@ -26,10 +25,6 @@ import {
 } from "@/modules/core/orpc/react";
 import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
 import { downloadBlob, exportPilaPdf } from "../lib/export-pdf";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const MONTHS = [
   "Enero",
@@ -360,16 +355,20 @@ function MonthlyReport() {
       });
       if (!result) return;
 
-      // Upload to Supabase Storage
+      // Upload via server-side API (uses service role key to bypass RLS)
       const storagePath = `pila-reports/${year}-${String(month).padStart(2, "0")}.pdf`;
-      const { error: uploadError } = await supabase.storage
-        .from("assets")
-        .upload(storagePath, result.blob, {
-          contentType: "application/pdf",
-          upsert: true,
-        });
-      if (uploadError)
-        throw new Error(`Error al subir: ${uploadError.message}`);
+      const formData = new FormData();
+      formData.append("file", result.blob, result.filename);
+      formData.append("storagePath", storagePath);
+      const uploadRes = await fetch("/api/pila/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!uploadRes.ok) {
+        const body = await uploadRes.json().catch(() => ({}));
+        throw new Error(body.error || "Error al subir el archivo");
+      }
 
       // Save record in DB
       await publishMutation.mutateAsync({
