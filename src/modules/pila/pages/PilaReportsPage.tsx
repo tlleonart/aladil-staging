@@ -1,8 +1,10 @@
 "use client";
 
-import { ArrowLeft, Download, FileDown, Loader2 } from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
+import { ArrowLeft, Download, FileDown, Loader2, Upload } from "lucide-react";
 import Link from "next/link";
 import { Fragment, useState } from "react";
+import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +19,17 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { orpc } from "@/modules/core/orpc/client";
-import { useQuery } from "@/modules/core/orpc/react";
-import { exportPilaPdf } from "../lib/export-pdf";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@/modules/core/orpc/react";
+import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
+import { downloadBlob, exportPilaPdf } from "../lib/export-pdf";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const MONTHS = [
   "Enero",
@@ -86,12 +97,13 @@ function ReportTable({ data, showLabName, title, subtitle }: ReportTableProps) {
     setPdfLoading(true);
     setPdfError(null);
     try {
-      await exportPilaPdf({
+      const result = await exportPilaPdf({
         data,
         showLabName: !!showLabName,
         title,
         subtitle,
       });
+      if (result) downloadBlob(result.blob, result.filename);
     } catch (err) {
       console.error("Error generating PDF:", err);
       setPdfError(
@@ -311,6 +323,8 @@ function useReportGenerator(params: {
 function MonthlyReport() {
   const [year, setYear] = useState(currentYear);
   const [month, setMonth] = useState(currentMonth);
+  const [publishing, setPublishing] = useState(false);
+  const queryClient = useQueryClient();
 
   const report = useReportGenerator({
     yearFrom: year,
@@ -318,6 +332,64 @@ function MonthlyReport() {
     yearTo: year,
     monthTo: month,
   });
+
+  const publishMutation = useMutation({
+    mutationFn: (data: {
+      year: number;
+      month: number;
+      storagePath: string;
+      filename: string;
+      sizeBytes?: number;
+    }) => orpc.pila.publishReport(data),
+    onSuccess: () => {
+      toast.success("Informe publicado correctamente");
+      queryClient.invalidateQueries({ queryKey: ["pila", "published"] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const handlePublish = async () => {
+    if (!report.data || report.data.reports.length === 0) return;
+    setPublishing(true);
+    try {
+      const result = await exportPilaPdf({
+        data: report.data,
+        showLabName: false,
+        title: "Informe Mensual PILA",
+        subtitle: `${MONTHS[month - 1]} ${year}`,
+      });
+      if (!result) return;
+
+      // Upload to Supabase Storage
+      const storagePath = `pila-reports/${year}-${String(month).padStart(2, "0")}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from("assets")
+        .upload(storagePath, result.blob, {
+          contentType: "application/pdf",
+          upsert: true,
+        });
+      if (uploadError)
+        throw new Error(`Error al subir: ${uploadError.message}`);
+
+      // Save record in DB
+      await publishMutation.mutateAsync({
+        year,
+        month,
+        storagePath,
+        filename: result.filename,
+        sizeBytes: result.blob.size,
+      });
+
+      // Also download locally
+      downloadBlob(result.blob, result.filename);
+    } catch (err) {
+      if (!publishMutation.isError) {
+        toast.error(getErrorMessage(err));
+      }
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -378,6 +450,20 @@ function MonthlyReport() {
       {report.data && (
         <>
           <Separator />
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {report.data.reports.length} reporte
+              {report.data.reports.length !== 1 ? "s" : ""} encontrados
+            </p>
+            <Button onClick={handlePublish} disabled={publishing}>
+              {publishing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="mr-2 h-4 w-4" />
+              )}
+              {publishing ? "Publicando..." : "Publicar para Laboratorios"}
+            </Button>
+          </div>
           <ReportTable
             data={report.data}
             showLabName={false}

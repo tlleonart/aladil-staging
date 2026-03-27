@@ -77,8 +77,9 @@ model User {
   // PILA: lab association (for lab users who submit PILA reports)
   labId         String?
   lab           Lab?    @relation("LabUsers", fields: [labId], references: [id], onDelete: SetNull)
-  pilaReports        PilaReport[] @relation("PilaSubmitter")
-  pilaReviewedReports PilaReport[] @relation("PilaReviewer")
+  pilaReports            PilaReport[] @relation("PilaSubmitter")
+  pilaReviewedReports    PilaReport[] @relation("PilaReviewer")
+  pilaPublishedReports   PilaPublishedReport[] @relation("PilaPublisher")
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -500,6 +501,22 @@ model PilaReportValue {
   @@unique([reportId, indicatorId])
   @@index([reportId])
   @@index([indicatorId])
+}
+
+// PILA published reports (admin-generated, stored in Supabase for reporters to download)
+model PilaPublishedReport {
+  id            String   @id @default(uuid())
+  year          Int
+  month         Int      // 1-12
+  storagePath   String   // Supabase Storage path
+  filename      String   // Original filename
+  sizeBytes     Int?
+  publishedById String
+  publishedBy   User     @relation("PilaPublisher", fields: [publishedById], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([year, month])
+  @@index([year, month])
 }
 
 // Basic audit log (helps with admin actions)

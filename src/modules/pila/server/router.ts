@@ -509,6 +509,75 @@ const generateReport = withPilaPermission("pila.read_own")
     return { reports, indicators };
   });
 
+// ── Published reports (saved PDFs for reporters to download) ──────
+
+// Admin saves a generated report to Supabase Storage
+const publishReport = withPilaPermission("pila.manage")
+  .input(
+    z.object({
+      year: z.number().int().min(2020).max(2100),
+      month: z.number().int().min(1).max(12),
+      storagePath: z.string().min(1),
+      filename: z.string().min(1),
+      sizeBytes: z.number().int().optional(),
+    }),
+  )
+  .handler(async ({ input, context }) => {
+    // Upsert: if a report for this month already exists, replace it
+    return prisma.pilaPublishedReport.upsert({
+      where: {
+        year_month: { year: input.year, month: input.month },
+      },
+      update: {
+        storagePath: input.storagePath,
+        filename: input.filename,
+        sizeBytes: input.sizeBytes ?? null,
+        publishedById: context.user.id,
+      },
+      create: {
+        year: input.year,
+        month: input.month,
+        storagePath: input.storagePath,
+        filename: input.filename,
+        sizeBytes: input.sizeBytes ?? null,
+        publishedById: context.user.id,
+      },
+    });
+  });
+
+// List published reports (any authenticated PILA user can see)
+const listPublished = withPilaPermission("pila.read_own")
+  .input(
+    z.object({
+      year: z.number().int().min(2020).max(2100).optional(),
+    }),
+  )
+  .handler(async ({ input }) => {
+    return prisma.pilaPublishedReport.findMany({
+      where: input.year ? { year: input.year } : undefined,
+      orderBy: [{ year: "desc" }, { month: "desc" }],
+      include: {
+        publishedBy: { select: { name: true } },
+      },
+    });
+  });
+
+// Admin deletes a published report
+const unpublishReport = withPilaPermission("pila.manage")
+  .input(z.object({ id: z.string().uuid() }))
+  .handler(async ({ input }) => {
+    const report = await prisma.pilaPublishedReport.findUnique({
+      where: { id: input.id },
+    });
+    if (!report) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Informe publicado no encontrado",
+      });
+    }
+    await prisma.pilaPublishedReport.delete({ where: { id: input.id } });
+    return { success: true, storagePath: report.storagePath };
+  });
+
 // ── Router export ─────────────────────────────────────────────────
 
 export const pilaRouter = {
@@ -532,4 +601,8 @@ export const pilaRouter = {
   reopen,
   markReviewed,
   generateReport,
+  // Published reports
+  publishReport,
+  listPublished,
+  unpublishReport,
 };

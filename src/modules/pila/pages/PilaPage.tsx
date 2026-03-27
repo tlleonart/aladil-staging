@@ -29,7 +29,9 @@ import {
 } from "@/modules/core/orpc/react";
 import { ConfirmDialog } from "@/modules/shared/ui";
 import { PilaStatusBadge } from "../components";
-import { exportPilaPdf } from "../lib/export-pdf";
+import { downloadBlob, exportPilaPdf } from "../lib/export-pdf";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
 const MONTHS = [
   "Enero",
@@ -52,6 +54,95 @@ const YEARS = Array.from({ length: 7 }, (_, i) => currentYear - 5 + i);
 
 interface PilaPageProps {
   canSubmit: boolean;
+}
+
+// ── Published Reports Section (reporters can download saved PDFs) ─
+
+function PublishedReports() {
+  const { data: reports = [], isLoading } = useQuery({
+    queryKey: ["pila", "published"],
+    queryFn: () => orpc.pila.listPublished({}),
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Informes Publicados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground py-4">Cargando...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (reports.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Informes Publicados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground py-4">
+            No hay informes publicados aún.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Informes Publicados</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground mb-4">
+          Informes mensuales consolidados y anónimos publicados por el
+          administrador.
+        </p>
+        <div className="grid gap-3">
+          {reports.map((report) => (
+            <div
+              key={report.id}
+              className="flex items-center justify-between rounded-lg border p-4"
+            >
+              <div className="flex items-center gap-4">
+                <div className="text-center min-w-[60px]">
+                  <div className="text-2xl font-bold">
+                    {String(report.month).padStart(2, "0")}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {MONTHS[report.month - 1]}
+                  </div>
+                </div>
+                <div>
+                  <p className="font-medium">
+                    Informe {MONTHS[report.month - 1]} {report.year}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Publicado por {report.publishedBy?.name ?? "Admin"} el{" "}
+                    {new Date(report.createdAt).toLocaleDateString("es")}
+                  </p>
+                </div>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <a
+                  href={`${supabaseUrl}/storage/v1/object/public/assets/${report.storagePath}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Descargar PDF
+                </a>
+              </Button>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 // ── Anonymous Monthly Report Section ─────────────────────────────
@@ -94,12 +185,13 @@ function AnonymousMonthlyReport() {
     try {
       const data = await fetchReportData();
       if (!data || data.reports.length === 0) return;
-      await exportPilaPdf({
+      const result = await exportPilaPdf({
         data,
         showLabName: false,
         title: "Informe Mensual PILA",
         subtitle: `${MONTHS[month - 1]} ${year}`,
       });
+      if (result) downloadBlob(result.blob, result.filename);
     } catch (err) {
       console.error("Error generating PDF:", err);
       setError("Error al generar el PDF");
@@ -453,8 +545,8 @@ export const PilaPage = ({ canSubmit }: PilaPageProps) => {
         </CardContent>
       </Card>
 
-      {/* Anonymous monthly report section */}
-      <AnonymousMonthlyReport />
+      {/* Published reports (reporters download from here) */}
+      <PublishedReports />
 
       {canSubmit && (
         <ConfirmDialog

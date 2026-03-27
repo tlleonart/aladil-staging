@@ -1029,7 +1029,7 @@ export async function exportPilaPdf({
   const { jsPDF, autoTable } = await loadJsPdf();
   const { reports, indicators } = data;
 
-  if (reports.length === 0) return;
+  if (reports.length === 0) return null;
 
   const logo = await loadLogoBase64();
 
@@ -1100,9 +1100,23 @@ export async function exportPilaPdf({
     addPageFooter(doc, i, totalPages, pageWidth, pageHeight, margin);
   }
 
-  // ── 6. Save ────────────────────────────────────────────────────
+  // ── 6. Build filename and return blob ─────────────────────────
   const safeTitle = title
     .replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s-]/g, "")
     .replace(/\s+/g, "-");
-  doc.save(`${safeTitle}.pdf`);
+  const filename = `${safeTitle}.pdf`;
+
+  const blob = doc.output("blob");
+
+  return { blob, filename };
+}
+
+/** Trigger a browser download from a Blob. */
+export function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
