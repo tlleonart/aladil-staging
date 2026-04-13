@@ -154,6 +154,13 @@ function AnonymousMonthlyReport() {
   const [csvLoading, setCsvLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Get current user info (lab association for PDF personalization)
+  const { data: me } = useQuery({
+    queryKey: ["users", "me"],
+    queryFn: () => orpc.users.me({}),
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Check if integral report is available (all reports REVIEWED)
   const { data: status, isLoading: statusLoading } = useQuery({
     queryKey: ["pila", "integralStatus", year, month],
@@ -190,6 +197,8 @@ function AnonymousMonthlyReport() {
         showLabName: false,
         title: "Informe Mensual PILA",
         subtitle: `${MONTHS[month - 1]} ${year}`,
+        highlightLabId: me?.labId ?? undefined,
+        highlightLabName: me?.labName ?? undefined,
       });
       if (result) downloadBlob(result.blob, result.filename);
     } catch (err) {

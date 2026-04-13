@@ -80,6 +80,7 @@ export function PilaReportEditPage({ id }: PilaReportEditPageProps) {
     indicatorId: v.indicatorId,
     numerator: v.numerator,
     denominator: v.denominator,
+    doesNotReport: v.doesNotReport ?? false,
   }));
 
   return (

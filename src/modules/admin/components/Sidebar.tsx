@@ -31,7 +31,6 @@ const navigation: NavItem[] = [
     name: "Panel",
     href: "/admin",
     icon: HomeIcon,
-    roles: ["admin", "director"],
   },
   {
     name: "Noticias",

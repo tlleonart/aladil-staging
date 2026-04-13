@@ -376,6 +376,20 @@ async function main() {
       sortOrder: 6,
     },
     {
+      code: "I-10",
+      name: "Valores críticos notificados a tiempo",
+      formula:
+        "(Total de notificaciones dentro de tiempo / Total de notificaciones de valores críticos) × 100",
+      numeratorLabel: "Total de notificaciones dentro de tiempo",
+      denominatorLabel: "Total de notificaciones de valores críticos",
+      considerations:
+        "Todo valor crítico debe ser notificado. Indicador valora si su notificación se realiza oportunamente. Diferentes secciones del laboratorio pueden tener distintos tiempos para realizar la notificación. Pueden seleccionarse los análisis que serían considerados en el indicador.",
+      exclusions:
+        "Las que se definan a nivel de determinados análisis o secciones del laboratorio.",
+      sortOrder: 7,
+      isActive: false,
+    },
+    {
       code: "I-11",
       name: "Error de validación",
       formula: "% de informes modificados / Total de informes validados",
@@ -385,7 +399,7 @@ async function main() {
         "En este caso cuando hablamos de informe nos referimos a paciente. Informe = paciente. Refiere a cualquier modificación en los informes una vez que ya estuvo disponible para el paciente.",
       exclusions:
         "Modificaciones previas a la validación final que habilita la entrega del informe.",
-      sortOrder: 7,
+      sortOrder: 8,
     },
     {
       code: "I-13",
@@ -396,7 +410,7 @@ async function main() {
       considerations:
         "Se contabilizan el total de los días laborables de cada persona y los días trabajados. Se contabiliza a todo el personal. Se contabilizan TODAS las ausencias justificadas y NO justificadas.",
       exclusions: null,
-      sortOrder: 8,
+      sortOrder: 9,
     },
     {
       code: "I-14",
@@ -408,7 +422,7 @@ async function main() {
       considerations:
         "Se contabilizan accidentes laborales de cualquier miembro del personal (punciones accidentales, caídas, accidentes de tránsito para personal que transporta muestras, etc.).",
       exclusions: null,
-      sortOrder: 9,
+      sortOrder: 10,
     },
     {
       code: "I-15",
@@ -419,7 +433,7 @@ async function main() {
       considerations:
         "Solo empleados desvinculados (por jubilación, voluntario, despidos, etc.).",
       exclusions: null,
-      sortOrder: 10,
+      sortOrder: 11,
     },
     {
       code: "I-17",
@@ -429,7 +443,7 @@ async function main() {
       denominatorLabel: "Llamadas totales",
       considerations: "Solo llamadas externas.",
       exclusions: null,
-      sortOrder: 11,
+      sortOrder: 12,
     },
   ];
 
@@ -444,6 +458,7 @@ async function main() {
         considerations: indicator.considerations,
         exclusions: indicator.exclusions,
         sortOrder: indicator.sortOrder,
+        ...("isActive" in indicator ? { isActive: indicator.isActive } : {}),
       },
       create: indicator,
     });

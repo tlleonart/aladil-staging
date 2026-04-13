@@ -3,6 +3,7 @@
 import { Info } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +21,7 @@ interface ReportValue {
   indicatorId: string;
   numerator: number | null;
   denominator: number | null;
+  doesNotReport?: boolean;
 }
 
 interface PilaReportFormProps {
@@ -80,16 +82,28 @@ export function PilaReportForm({
 
   // Build values state from defaults + active indicators
   const [valuesMap, setValuesMap] = useState<
-    Record<string, { numerator: number | null; denominator: number | null }>
+    Record<
+      string,
+      {
+        numerator: number | null;
+        denominator: number | null;
+        doesNotReport: boolean;
+      }
+    >
   >(() => {
     const map: Record<
       string,
-      { numerator: number | null; denominator: number | null }
+      {
+        numerator: number | null;
+        denominator: number | null;
+        doesNotReport: boolean;
+      }
     > = {};
     for (const v of defaultValues) {
       map[v.indicatorId] = {
         numerator: v.numerator,
         denominator: v.denominator,
+        doesNotReport: v.doesNotReport ?? false,
       };
     }
     return map;
@@ -106,7 +120,19 @@ export function PilaReportForm({
         ...prev[indicatorId],
         numerator: prev[indicatorId]?.numerator ?? null,
         denominator: prev[indicatorId]?.denominator ?? null,
+        doesNotReport: prev[indicatorId]?.doesNotReport ?? false,
         [field]: raw === "" ? null : Number.parseFloat(raw),
+      },
+    }));
+  };
+
+  const toggleDoesNotReport = (indicatorId: string, checked: boolean) => {
+    setValuesMap((prev) => ({
+      ...prev,
+      [indicatorId]: {
+        numerator: checked ? null : (prev[indicatorId]?.numerator ?? null),
+        denominator: checked ? null : (prev[indicatorId]?.denominator ?? null),
+        doesNotReport: checked,
       },
     }));
   };
@@ -115,8 +141,13 @@ export function PilaReportForm({
     e.preventDefault();
     const values: ReportValueInput[] = activeIndicators.map((ind) => ({
       indicatorId: ind.id,
-      numerator: valuesMap[ind.id]?.numerator ?? null,
-      denominator: valuesMap[ind.id]?.denominator ?? null,
+      numerator: valuesMap[ind.id]?.doesNotReport
+        ? null
+        : (valuesMap[ind.id]?.numerator ?? null),
+      denominator: valuesMap[ind.id]?.doesNotReport
+        ? null
+        : (valuesMap[ind.id]?.denominator ?? null),
+      doesNotReport: valuesMap[ind.id]?.doesNotReport ?? false,
     }));
     onSubmit({ year, month, values, notes: notes || undefined });
   };
@@ -164,15 +195,16 @@ export function PilaReportForm({
         ) : (
           activeIndicators.map((indicator) => {
             const val = valuesMap[indicator.id];
+            const isNR = val?.doesNotReport ?? false;
             const num = val?.numerator;
             const den = val?.denominator;
             const calculated =
-              num != null && den != null && den > 0 ? num / den : null;
+              !isNR && num != null && den != null && den > 0 ? num / den : null;
 
             return (
               <div
                 key={indicator.id}
-                className="rounded-lg border p-4 space-y-3"
+                className={`rounded-lg border p-4 space-y-3 ${isNR ? "bg-neutral-50 border-neutral-300" : ""}`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -209,49 +241,89 @@ export function PilaReportForm({
                       </TooltipProvider>
                     )}
                   </div>
-                  {calculated !== null && (
-                    <span className="text-sm font-mono font-semibold bg-gray-100 px-2 py-1 rounded whitespace-nowrap">
-                      {(calculated * 100).toFixed(4)}%
+                  {isNR ? (
+                    <span className="text-sm font-mono font-semibold bg-amber-100 text-amber-700 px-2 py-1 rounded whitespace-nowrap">
+                      N/R
                     </span>
+                  ) : (
+                    calculated !== null && (
+                      <span className="text-sm font-mono font-semibold bg-gray-100 px-2 py-1 rounded whitespace-nowrap">
+                        {(calculated * 100).toFixed(4)}%
+                      </span>
+                    )
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {indicator.formula}
                 </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-xs">
-                      {indicator.numeratorLabel}
-                    </Label>
-                    <Input
-                      type="number"
-                      step="any"
-                      min="0"
-                      placeholder="0"
-                      value={num ?? ""}
-                      onChange={(e) =>
-                        updateValue(indicator.id, "numerator", e.target.value)
+
+                {/* No reporta toggle */}
+                {!readOnly && (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`nr-${indicator.id}`}
+                      checked={isNR}
+                      onCheckedChange={(checked) =>
+                        toggleDoesNotReport(indicator.id, checked === true)
                       }
-                      disabled={readOnly}
                     />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">
-                      {indicator.denominatorLabel}
+                    <Label
+                      htmlFor={`nr-${indicator.id}`}
+                      className="text-xs text-muted-foreground cursor-pointer"
+                    >
+                      No reporta (N/R)
                     </Label>
-                    <Input
-                      type="number"
-                      step="any"
-                      min="0"
-                      placeholder="0"
-                      value={den ?? ""}
-                      onChange={(e) =>
-                        updateValue(indicator.id, "denominator", e.target.value)
-                      }
-                      disabled={readOnly}
-                    />
                   </div>
-                </div>
+                )}
+
+                {/* Numerator / Denominator inputs */}
+                {!isNR && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs">
+                        {indicator.numeratorLabel}
+                      </Label>
+                      <Input
+                        type="number"
+                        step="any"
+                        min="0"
+                        placeholder="0"
+                        value={num ?? ""}
+                        onChange={(e) =>
+                          updateValue(indicator.id, "numerator", e.target.value)
+                        }
+                        disabled={readOnly}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">
+                        {indicator.denominatorLabel}
+                      </Label>
+                      <Input
+                        type="number"
+                        step="any"
+                        min="0"
+                        placeholder="0"
+                        value={den ?? ""}
+                        onChange={(e) =>
+                          updateValue(
+                            indicator.id,
+                            "denominator",
+                            e.target.value,
+                          )
+                        }
+                        disabled={readOnly}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Read-only N/R display */}
+                {readOnly && isNR && (
+                  <p className="text-sm text-amber-600 font-medium">
+                    Este indicador no fue reportado para este período.
+                  </p>
+                )}
               </div>
             );
           })

@@ -38,6 +38,7 @@ export const ReportValueInputSchema = z.object({
   indicatorId: z.string().uuid(),
   numerator: z.number().min(0).nullable().optional(),
   denominator: z.number().min(0).nullable().optional(),
+  doesNotReport: z.boolean().default(false),
 });
 
 // ── Report schemas ────────────────────────────────────────────────

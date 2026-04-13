@@ -495,8 +495,9 @@ model PilaReportValue {
   indicatorId   String
   indicator     PilaIndicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
 
-  numerator     Float?
-  denominator   Float?
+  numerator      Float?
+  denominator    Float?
+  doesNotReport  Boolean @default(false)
 
   @@unique([reportId, indicatorId])
   @@index([reportId])

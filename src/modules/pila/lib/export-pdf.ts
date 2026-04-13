@@ -31,6 +31,8 @@ const TABLE_HEADER_LIGHT: RGB = [91, 155, 213];
 const GRAY_TEXT: RGB = [100, 100, 100];
 const LIGHT_GRAY: RGB = [240, 243, 247];
 const WHITE: RGB = [255, 255, 255];
+const HIGHLIGHT_GOLD: RGB = [234, 170, 0];
+const BAR_GRAY: RGB = [180, 185, 195];
 
 type RGB = [number, number, number];
 type JsPdfDoc = InstanceType<Awaited<ReturnType<typeof loadJsPdf>>["jsPDF"]>;
@@ -46,6 +48,7 @@ interface ReportData {
     values: Array<{
       numerator: number | null;
       denominator: number | null;
+      doesNotReport?: boolean;
       indicator: { id: string; code: string; name: string };
     }>;
   }>;
@@ -66,6 +69,9 @@ interface ExportPdfOptions {
   showLabName: boolean;
   title: string;
   subtitle: string;
+  /** When set, this lab is highlighted in anonymous reports (reporter's own lab) */
+  highlightLabId?: string;
+  highlightLabName?: string;
 }
 
 // ── Logo loader ──────────────────────────────────────────────────
@@ -513,6 +519,182 @@ function drawBarChart(
   doc.text(`Media (${mean.toFixed(2)}%)`, legendCenterX + 10, legendY + 0.5);
 }
 
+// ── Highlighted bar chart (anonymous with own lab highlighted) ───
+
+interface HighlightedBarChartData {
+  labels: string[];
+  values: (number | null)[];
+  highlighted: boolean[];
+  chartTitle: string;
+}
+
+function drawBarChartHighlighted(
+  doc: JsPdfDoc,
+  chartData: HighlightedBarChartData,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const { labels, values, highlighted, chartTitle } = chartData;
+  const validValues = values.filter((v): v is number => v != null);
+  if (validValues.length === 0) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY_TEXT);
+    doc.text(
+      "Sin datos disponibles para este indicador.",
+      x + width / 2,
+      y + height / 2,
+      { align: "center" },
+    );
+    return;
+  }
+
+  const maxValue = niceMax(Math.max(...validValues));
+  // Mean excludes N/R (null values already filtered)
+  const mean = validValues.reduce((a, b) => a + b, 0) / validValues.length;
+
+  const chartLeft = x + 20;
+  const chartRight = x + width - 8;
+  const chartTop = y + 14;
+  const chartBottom = y + height - 22;
+  const chartW = chartRight - chartLeft;
+  const chartH = chartBottom - chartTop;
+
+  // Title
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...BRAND_BLUE);
+  doc.text(chartTitle, x + width / 2, y + 6, { align: "center" });
+
+  // Background
+  doc.setFillColor(250, 251, 253);
+  doc.roundedRect(
+    chartLeft - 2,
+    chartTop - 2,
+    chartW + 4,
+    chartH + 4,
+    1,
+    1,
+    "F",
+  );
+
+  // Y-axis gridlines and labels
+  const yTicks = 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6);
+  doc.setTextColor(...GRAY_TEXT);
+  for (let i = 0; i <= yTicks; i++) {
+    const tickY = chartBottom - (i / yTicks) * chartH;
+    const tickVal = (i / yTicks) * maxValue;
+    doc.setDrawColor(225, 230, 235);
+    doc.setLineWidth(0.1);
+    doc.line(chartLeft, tickY, chartRight, tickY);
+    let label: string;
+    if (maxValue >= 1) label = tickVal.toFixed(maxValue >= 10 ? 0 : 2);
+    else label = tickVal.toFixed(4);
+    doc.text(label, chartLeft - 2, tickY + 1, { align: "right" });
+  }
+
+  // Axes
+  doc.setDrawColor(180, 185, 190);
+  doc.setLineWidth(0.3);
+  doc.line(chartLeft, chartTop, chartLeft, chartBottom);
+  doc.line(chartLeft, chartBottom, chartRight, chartBottom);
+
+  // Bars
+  const barCount = labels.length;
+  const groupWidth = chartW / barCount;
+  const barWidth = Math.min(groupWidth * 0.6, 14);
+  const barGap = (groupWidth - barWidth) / 2;
+
+  for (let i = 0; i < barCount; i++) {
+    const val = values[i];
+    const isHL = highlighted[i];
+    const barX = chartLeft + i * groupWidth + barGap;
+
+    if (val != null && val > 0) {
+      const barH = (val / maxValue) * chartH;
+      const barY = chartBottom - barH;
+
+      // Use gold for highlighted lab, gray for others
+      if (isHL) {
+        doc.setFillColor(...HIGHLIGHT_GOLD);
+      } else {
+        doc.setFillColor(...BAR_GRAY);
+      }
+      doc.roundedRect(barX, barY, barWidth, barH, 0.5, 0.5, "F");
+
+      // Value label on top
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5.5);
+      doc.setTextColor(...(isHL ? HIGHLIGHT_GOLD : BRAND_BLUE));
+      doc.text(`${val.toFixed(2)}%`, barX + barWidth / 2, barY - 1.5, {
+        align: "center",
+      });
+    }
+
+    // X-axis label
+    doc.setFont("helvetica", isHL ? "bold" : "normal");
+    doc.setFontSize(isHL ? 6.5 : 6);
+    doc.setTextColor(...(isHL ? ([0, 0, 0] as RGB) : ([60, 60, 60] as RGB)));
+    doc.text(
+      labels[i],
+      chartLeft + i * groupWidth + groupWidth / 2,
+      chartBottom + 5,
+      { align: "center" },
+    );
+  }
+
+  // Mean line (dashed)
+  if (mean > 0 && mean <= maxValue) {
+    const meanY = chartBottom - (mean / maxValue) * chartH;
+    doc.setDrawColor(...MEAN_RED);
+    doc.setLineWidth(0.5);
+    let cx = chartLeft + 2;
+    while (cx < chartRight - 2) {
+      const endX = Math.min(cx + 2, chartRight - 2);
+      doc.line(cx, meanY, endX, meanY);
+      cx = endX + 1.5;
+    }
+  }
+
+  // Legend
+  const legendY = chartBottom + 12;
+  const legendCenterX = x + width / 2;
+
+  // Highlighted lab legend
+  const hasHighlight = highlighted.some(Boolean);
+  if (hasHighlight) {
+    doc.setFillColor(...HIGHLIGHT_GOLD);
+    doc.roundedRect(legendCenterX - 50, legendY - 2, 5, 3, 0.5, 0.5, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6);
+    doc.setTextColor(60, 60, 60);
+    doc.text("Mi laboratorio", legendCenterX - 43, legendY + 0.5);
+  }
+
+  // Others legend
+  doc.setFillColor(...BAR_GRAY);
+  doc.roundedRect(legendCenterX - 6, legendY - 2, 5, 3, 0.5, 0.5, "F");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6);
+  doc.setTextColor(60, 60, 60);
+  doc.text("Otros", legendCenterX + 1, legendY + 0.5);
+
+  // Mean legend
+  doc.setDrawColor(...MEAN_RED);
+  doc.setLineWidth(0.5);
+  doc.line(
+    legendCenterX + 16,
+    legendY - 0.5,
+    legendCenterX + 22,
+    legendY - 0.5,
+  );
+  doc.text(`Media (${mean.toFixed(2)}%)`, legendCenterX + 24, legendY + 0.5);
+}
+
 // ── Line chart drawing ───────────────────────────────────────────
 
 interface LineChartData {
@@ -862,6 +1044,8 @@ function addIndicatorPageAnonymous(
   pageHeight: number,
   margin: number,
   logo: string | null,
+  highlightLabId?: string,
+  highlightLabName?: string,
 ) {
   doc.addPage();
   addPageHeader(doc, period, pageWidth, margin, logo);
@@ -898,6 +1082,8 @@ function addIndicatorPageAnonymous(
     const values: number[] = [];
     for (const report of labReports) {
       const val = report.values.find((v) => v.indicator.id === indicator.id);
+      // Skip doesNotReport values
+      if (val?.doesNotReport) continue;
       const pct = computePercentage(val?.numerator, val?.denominator);
       if (pct != null) values.push(pct);
     }
@@ -905,15 +1091,22 @@ function addIndicatorPageAnonymous(
       values.length > 0
         ? values.reduce((a, b) => a + b, 0) / values.length
         : null;
-    return { label: `Lab ${idx + 1}`, pct: avgPct };
+    const isHighlighted = highlightLabId === labId;
+    return {
+      label:
+        isHighlighted && highlightLabName ? highlightLabName : `Lab ${idx + 1}`,
+      pct: avgPct,
+      isHighlighted,
+    };
   });
 
   const chartHeight = Math.min(pageHeight - y - 22, 120);
-  drawBarChart(
+  drawBarChartHighlighted(
     doc,
     {
       labels: labEntries.map((e) => e.label),
       values: labEntries.map((e) => e.pct),
+      highlighted: labEntries.map((e) => e.isHighlighted),
       chartTitle: `${indicator.code} — Comparativa entre laboratorios`,
     },
     margin,
@@ -957,6 +1150,7 @@ function addSummaryPage(
     const values: number[] = [];
     for (const report of reports) {
       const val = report.values.find((v) => v.indicator.id === ind.id);
+      if (val?.doesNotReport) continue; // Exclude N/R from statistics
       const pct = computePercentage(val?.numerator, val?.denominator);
       if (pct != null) values.push(pct);
     }
@@ -1025,6 +1219,8 @@ export async function exportPilaPdf({
   showLabName,
   title,
   subtitle,
+  highlightLabId,
+  highlightLabName,
 }: ExportPdfOptions) {
   const { jsPDF, autoTable } = await loadJsPdf();
   const { reports, indicators } = data;
@@ -1045,7 +1241,8 @@ export async function exportPilaPdf({
   const period = buildPeriodString(reports);
 
   // ── 1. Cover page ──────────────────────────────────────────────
-  addCoverPage(doc, title, subtitle, pageWidth, pageHeight, logo);
+  const coverTitle = highlightLabName ? `${title}\n${highlightLabName}` : title;
+  addCoverPage(doc, coverTitle, subtitle, pageWidth, pageHeight, logo);
 
   // ── 2. Indicator list page ─────────────────────────────────────
   addIndicatorListPage(
@@ -1075,7 +1272,7 @@ export async function exportPilaPdf({
       );
     }
   } else {
-    // Anonymous report: bar charts comparing labs
+    // Anonymous report: bar charts comparing labs (with optional highlight)
     for (const indicator of indicators) {
       addIndicatorPageAnonymous(
         doc,
@@ -1086,6 +1283,8 @@ export async function exportPilaPdf({
         pageHeight,
         margin,
         logo,
+        highlightLabId,
+        highlightLabName,
       );
     }
   }

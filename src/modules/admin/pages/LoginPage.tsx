@@ -1,15 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/modules/core/auth/auth-client";
@@ -35,7 +30,11 @@ export const LoginPage = () => {
       if (error) {
         // Better Auth returns English messages; translate common ones
         const msg = error.message?.toLowerCase() || "";
-        if (msg.includes("invalid") || msg.includes("password") || msg.includes("email")) {
+        if (
+          msg.includes("invalid") ||
+          msg.includes("password") ||
+          msg.includes("email")
+        ) {
           setError("Correo electrónico o contraseña incorrectos");
         } else {
           setError(error.message || "Credenciales inválidas");
@@ -58,9 +57,22 @@ export const LoginPage = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">ALADIL Admin</CardTitle>
-          <CardDescription>Inicia sesión para acceder al panel</CardDescription>
+        <CardHeader className="flex flex-col items-center gap-3 pt-8 pb-4">
+          <Image
+            src="/logo.png"
+            alt="ALADIL"
+            width={56}
+            height={56}
+            className="shrink-0"
+          />
+          <div className="flex flex-col items-center leading-tight">
+            <span className="text-lg font-bold text-neutral-900 tracking-wide">
+              ALADIL
+            </span>
+            <span className="text-[11px] font-medium uppercase tracking-widest text-neutral-500">
+              Intranet
+            </span>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

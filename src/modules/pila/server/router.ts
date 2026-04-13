@@ -10,6 +10,10 @@ import {
   UpdatePilaIndicatorSchema,
   UpdatePilaReportSchema,
 } from "../schemas";
+import {
+  sendReportSubmittedToAdmin,
+  sendReportSubmittedToReporter,
+} from "./email";
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -197,8 +201,9 @@ const create = withPilaPermission("pila.submit")
         values: {
           create: input.values.map((v) => ({
             indicatorId: v.indicatorId,
-            numerator: v.numerator ?? null,
-            denominator: v.denominator ?? null,
+            numerator: v.doesNotReport ? null : (v.numerator ?? null),
+            denominator: v.doesNotReport ? null : (v.denominator ?? null),
+            doesNotReport: v.doesNotReport ?? false,
           })),
         },
       },
@@ -232,14 +237,16 @@ const update = withPilaPermission("pila.submit")
           },
         },
         update: {
-          numerator: v.numerator ?? null,
-          denominator: v.denominator ?? null,
+          numerator: v.doesNotReport ? null : (v.numerator ?? null),
+          denominator: v.doesNotReport ? null : (v.denominator ?? null),
+          doesNotReport: v.doesNotReport ?? false,
         },
         create: {
           reportId: input.id,
           indicatorId: v.indicatorId,
-          numerator: v.numerator ?? null,
-          denominator: v.denominator ?? null,
+          numerator: v.doesNotReport ? null : (v.numerator ?? null),
+          denominator: v.doesNotReport ? null : (v.denominator ?? null),
+          doesNotReport: v.doesNotReport ?? false,
         },
       });
     }
@@ -267,15 +274,53 @@ const submit = withPilaPermission("pila.submit")
         message: "Este reporte ya fue enviado.",
       });
     }
-    return prisma.pilaReport.update({
+    const updated = await prisma.pilaReport.update({
       where: { id: input.id },
       data: {
         status: "SUBMITTED",
         submittedById: context.user.id,
         submittedAt: new Date(),
       },
-      include: reportInclude,
+      include: {
+        ...reportInclude,
+        values: {
+          include: {
+            indicator: {
+              select: { id: true, code: true, name: true, formula: true },
+            },
+          },
+        },
+      },
     });
+
+    // Send email notifications (fire-and-forget, don't block the response)
+    const user = await prisma.user.findUnique({
+      where: { id: context.user.id },
+    });
+    if (user && updated.lab) {
+      const emailData = {
+        reporterName: user.name || user.email,
+        reporterEmail: user.email,
+        labName: updated.lab.name,
+        year: updated.year,
+        month: updated.month,
+        values: updated.values.map((v) => ({
+          indicatorCode: v.indicator.code,
+          indicatorName: v.indicator.name,
+          numerator: v.numerator,
+          denominator: v.denominator,
+          doesNotReport: v.doesNotReport,
+        })),
+      };
+      sendReportSubmittedToReporter(emailData).catch((err) =>
+        console.error("[PILA Email] Error sending to reporter:", err),
+      );
+      sendReportSubmittedToAdmin(emailData).catch((err) =>
+        console.error("[PILA Email] Error sending to admin:", err),
+      );
+    }
+
+    return updated;
   });
 
 // Check if current month report is pending for the user's lab
