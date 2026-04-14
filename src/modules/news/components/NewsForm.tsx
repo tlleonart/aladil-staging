@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { AssetUploader } from "@/modules/assets/components/AssetUploader";
 import { RichTextEditor } from "@/modules/shared/ui/RichTextEditor";
 import { type CreateNewsPost, CreateNewsPostSchema } from "../schemas";
 
@@ -29,6 +30,12 @@ interface NewsFormProps {
   onSubmit: (data: CreateNewsPost) => void;
   isLoading?: boolean;
   submitLabel?: string;
+  currentCoverAsset?: {
+    id: string;
+    bucket: string;
+    path: string;
+    filename: string;
+  } | null;
 }
 
 export function NewsForm({
@@ -36,6 +43,7 @@ export function NewsForm({
   onSubmit,
   isLoading,
   submitLabel = "Guardar",
+  currentCoverAsset,
 }: NewsFormProps) {
   const form = useForm<CreateNewsPost>({
     resolver: zodResolver(CreateNewsPostSchema),
@@ -178,6 +186,32 @@ export function NewsForm({
               <FormDescription>
                 Máximo 500 caracteres. Se muestra en la vista previa de la
                 noticia.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="coverAssetId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Imagen de portada</FormLabel>
+              <FormControl>
+                <AssetUploader
+                  value={field.value || null}
+                  onChange={(assetId) => field.onChange(assetId || undefined)}
+                  accept="image/jpeg,image/png,image/webp"
+                  folder="news"
+                  type="IMAGE"
+                  label="Subir imagen de portada"
+                  description="JPG, PNG o WebP. Recomendado: 1200×630px."
+                  currentAsset={currentCoverAsset}
+                />
+              </FormControl>
+              <FormDescription>
+                Se muestra como banner en la noticia y en el listado.
               </FormDescription>
               <FormMessage />
             </FormItem>

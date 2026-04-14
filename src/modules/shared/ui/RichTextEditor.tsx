@@ -95,7 +95,24 @@ function ToolbarDivider() {
   return <div className="w-px h-6 bg-border mx-1" />;
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const ACCEPTED_FORMATS = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const FORMATS_LABEL = "JPG, PNG, WebP, GIF";
+
+function validateImageFile(file: File): string | null {
+  if (!ACCEPTED_FORMATS.includes(file.type)) {
+    return `Formato no soportado. Usá ${FORMATS_LABEL}.`;
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return `La imagen supera los 5 MB (${(file.size / 1024 / 1024).toFixed(1)} MB).`;
+  }
+  return null;
+}
+
 async function uploadImageFile(file: File): Promise<string> {
+  const error = validateImageFile(file);
+  if (error) throw new Error(error);
+
   const formData = new FormData();
   formData.append("file", file);
 
@@ -122,6 +139,8 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -198,13 +217,16 @@ export function RichTextEditor({
   const handleImageUpload = useCallback(
     async (file: File) => {
       if (!editor) return;
+      setUploadError(null);
       setIsUploading(true);
       try {
         const url = await uploadImageFile(file);
         editor.chain().focus().setImage({ src: url }).run();
       } catch (err) {
-        console.error("Image upload error:", err);
-        alert(err instanceof Error ? err.message : "Error al subir la imagen");
+        const msg =
+          err instanceof Error ? err.message : "Error al subir la imagen";
+        setUploadError(msg);
+        setTimeout(() => setUploadError(null), 5000);
       } finally {
         setIsUploading(false);
       }
@@ -247,12 +269,40 @@ export function RichTextEditor({
 
   return (
     <TooltipProvider>
-      <div className={cn("border rounded-lg overflow-hidden", className)}>
+      <div
+        className={cn("border rounded-lg overflow-hidden relative", className)}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node))
+            setIsDragging(false);
+        }}
+        onDrop={() => setIsDragging(false)}
+      >
+        {/* Drag overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 z-50 bg-blue-50/90 border-2 border-dashed border-blue-400 rounded-lg flex flex-col items-center justify-center pointer-events-none">
+            <ImageIcon className="h-10 w-10 text-blue-500 mb-2" />
+            <p className="text-sm font-medium text-blue-700">
+              Soltar imagen aquí
+            </p>
+            <p className="text-xs text-blue-500 mt-1">
+              {FORMATS_LABEL} — Máx. 5 MB
+            </p>
+          </div>
+        )}
+
         {/* Hidden file input for image upload */}
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept={ACCEPTED_FORMATS.join(",")}
           onChange={handleFileInput}
           className="hidden"
         />
@@ -262,6 +312,13 @@ export function RichTextEditor({
           <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border-b text-sm text-blue-700">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             Subiendo imagen...
+          </div>
+        )}
+
+        {/* Upload error */}
+        {uploadError && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border-b text-sm text-red-700">
+            {uploadError}
           </div>
         )}
 
@@ -461,17 +518,30 @@ export function RichTextEditor({
           <ToolbarButton onClick={setLink} tooltip="Insertar enlace">
             <LinkIcon className="h-4 w-4" />
           </ToolbarButton>
-          <ToolbarButton
-            onClick={addImage}
-            disabled={isUploading}
-            tooltip="Subir imagen"
-          >
-            {isUploading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ImageIcon className="h-4 w-4" />
-            )}
-          </ToolbarButton>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={addImage}
+                disabled={isUploading}
+                className="h-8 w-8 p-0"
+              >
+                {isUploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ImageIcon className="h-4 w-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs max-w-48">
+              <p className="font-medium">Subir imagen</p>
+              <p className="text-muted-foreground mt-1">
+                {FORMATS_LABEL} — Máx. 5 MB. También podés arrastrar o pegar.
+              </p>
+            </TooltipContent>
+          </Tooltip>
 
           <ToolbarDivider />
 

@@ -104,6 +104,7 @@ export function NewsEditPage({ id }: NewsEditPageProps) {
             onSubmit={(data) => updateMutation.mutate(data)}
             isLoading={updateMutation.isPending}
             submitLabel="Actualizar Noticia"
+            currentCoverAsset={post.coverAsset ?? null}
           />
         </CardContent>
       </Card>
