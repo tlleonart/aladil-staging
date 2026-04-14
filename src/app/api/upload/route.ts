@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   }
 
   // Create asset record
-  await prisma.asset.create({
+  const asset = await prisma.asset.create({
     data: {
       type: "IMAGE",
       bucket: BUCKET,
@@ -63,5 +63,10 @@ export async function POST(request: Request) {
 
   const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${storagePath}`;
 
-  return NextResponse.json({ url: publicUrl });
+  return NextResponse.json({
+    url: publicUrl,
+    assetId: asset.id,
+    bucket: BUCKET,
+    path: storagePath,
+  });
 }

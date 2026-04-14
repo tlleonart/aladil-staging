@@ -1,18 +1,12 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
 import { FileText, ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { orpc } from "@/modules/core/orpc/client";
 import { useMutation } from "@/modules/core/orpc/react";
 
-// Initialize Supabase client (client-side)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-const BUCKET_NAME = "assets";
 
 interface AssetUploaderProps {
   value?: string | null;
@@ -44,17 +38,6 @@ export function AssetUploader({
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const createAssetMutation = useMutation({
-    mutationFn: (data: {
-      type: "IMAGE" | "PDF" | "OTHER";
-      bucket: string;
-      path: string;
-      filename: string;
-      mimeType?: string;
-      size?: number;
-    }) => orpc.assets.create(data),
-  });
-
   const deleteAssetMutation = useMutation({
     mutationFn: (id: string) => orpc.assets.remove({ id }),
   });
@@ -73,39 +56,25 @@ export function AssetUploader({
       setError(null);
 
       try {
-        // Generate unique filename
-        const timestamp = Date.now();
-        const sanitizedName = file.name
-          .toLowerCase()
-          .replace(/[^a-z0-9.]/g, "-");
-        const storagePath = `${folder}/${timestamp}-${sanitizedName}`;
+        // Upload via server-side API (bypasses RLS)
+        const formData = new FormData();
+        formData.append("file", file);
 
-        // Upload to Supabase Storage
-        const { error: uploadError } = await supabase.storage
-          .from(BUCKET_NAME)
-          .upload(storagePath, file, {
-            contentType: file.type,
-            upsert: false,
-          });
-
-        if (uploadError) {
-          throw new Error(`Error al subir: ${uploadError.message}`);
-        }
-
-        // Create asset record
-        const asset = await createAssetMutation.mutateAsync({
-          type,
-          bucket: BUCKET_NAME,
-          path: storagePath,
-          filename: file.name,
-          mimeType: file.type,
-          size: file.size,
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+          credentials: "include",
         });
 
-        // Update preview and notify parent
-        const newPreviewUrl = `${supabaseUrl}/storage/v1/object/public/${BUCKET_NAME}/${storagePath}`;
-        setPreviewUrl(newPreviewUrl);
-        onChange(asset.id);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Error al subir archivo");
+        }
+
+        const { url, assetId } = await res.json();
+
+        setPreviewUrl(url);
+        onChange(assetId);
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Error al subir archivo";
@@ -113,11 +82,10 @@ export function AssetUploader({
         console.error("Upload error:", err);
       } finally {
         setIsUploading(false);
-        // Reset input
         event.target.value = "";
       }
     },
-    [folder, type, createAssetMutation, onChange],
+    [onChange],
   );
 
   const handleRemove = useCallback(async () => {
