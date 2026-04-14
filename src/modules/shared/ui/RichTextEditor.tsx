@@ -1,6 +1,5 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -48,13 +47,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { orpc } from "@/modules/core/orpc/client";
-
-// Supabase client for image uploads
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-const BUCKET_NAME = "assets";
 
 interface RichTextEditorProps {
   content: string;
@@ -104,32 +96,22 @@ function ToolbarDivider() {
 }
 
 async function uploadImageFile(file: File): Promise<string> {
-  const timestamp = Date.now();
-  const sanitizedName = file.name.toLowerCase().replace(/[^a-z0-9.]/g, "-");
-  const storagePath = `editor/${timestamp}-${sanitizedName}`;
+  const formData = new FormData();
+  formData.append("file", file);
 
-  const { error: uploadError } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(storagePath, file, {
-      contentType: file.type,
-      upsert: false,
-    });
-
-  if (uploadError) {
-    throw new Error(`Error al subir imagen: ${uploadError.message}`);
-  }
-
-  // Create asset record
-  await orpc.assets.create({
-    type: "IMAGE" as const,
-    bucket: BUCKET_NAME,
-    path: storagePath,
-    filename: file.name,
-    mimeType: file.type,
-    size: file.size,
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+    credentials: "include",
   });
 
-  return `${supabaseUrl}/storage/v1/object/public/${BUCKET_NAME}/${storagePath}`;
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Error al subir imagen");
+  }
+
+  const { url } = await res.json();
+  return url;
 }
 
 export function RichTextEditor({

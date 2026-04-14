@@ -1,5 +1,6 @@
 "use client";
 
+import DOMPurify from "dompurify";
 import { ArrowLeft, Calendar, FileText, Loader2, User } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -20,12 +21,22 @@ const formatDate = (date: Date | null): string => {
   }).format(new Date(date));
 };
 
-// Simple content renderer - handles JSON content or plain text
+// Content renderer - handles HTML string (from TipTap getHTML) or plain text
 const renderContent = (content: unknown): React.ReactNode => {
   if (!content) return null;
 
-  // If content is a string, render it as paragraphs
   if (typeof content === "string") {
+    // If it looks like HTML (contains tags), sanitize and render
+    if (content.includes("<")) {
+      const clean = DOMPurify.sanitize(content, {
+        ADD_TAGS: ["table", "thead", "tbody", "tr", "th", "td"],
+        ADD_ATTR: ["colspan", "rowspan"],
+      });
+      return (
+        <div className="tiptap" dangerouslySetInnerHTML={{ __html: clean }} />
+      );
+    }
+    // Plain text fallback
     return content.split("\n\n").map((paragraph, index) => (
       <p key={index} className="mb-4">
         {paragraph}
@@ -33,38 +44,8 @@ const renderContent = (content: unknown): React.ReactNode => {
     ));
   }
 
-  // If content is an object (TipTap/Slate/etc JSON), try to render it
+  // Fallback for object content
   if (typeof content === "object") {
-    // Handle TipTap JSON format
-    if (
-      "type" in (content as object) &&
-      (content as { type: string }).type === "doc"
-    ) {
-      const doc = content as {
-        content?: Array<{ type: string; content?: Array<{ text?: string }> }>;
-      };
-      return doc.content?.map((node, index) => {
-        if (node.type === "paragraph") {
-          const text = node.content?.map((c) => c.text).join("") || "";
-          return (
-            <p key={index} className="mb-4">
-              {text}
-            </p>
-          );
-        }
-        if (node.type === "heading") {
-          const text = node.content?.map((c) => c.text).join("") || "";
-          return (
-            <h2 key={index} className="text-2xl font-bold mt-8 mb-4">
-              {text}
-            </h2>
-          );
-        }
-        return null;
-      });
-    }
-
-    // Fallback: stringify the content
     return <p>{JSON.stringify(content)}</p>;
   }
 
