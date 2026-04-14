@@ -65,14 +65,9 @@ export const LoginPage = () => {
             height={56}
             className="shrink-0"
           />
-          <div className="flex flex-col items-center leading-tight">
-            <span className="text-lg font-bold text-neutral-900 tracking-wide">
-              ALADIL
-            </span>
-            <span className="text-[11px] font-medium uppercase tracking-widest text-neutral-500">
-              Intranet
-            </span>
-          </div>
+          <span className="text-[11px] font-medium uppercase tracking-widest text-neutral-500">
+            Intranet
+          </span>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
