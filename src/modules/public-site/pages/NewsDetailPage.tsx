@@ -161,10 +161,10 @@ export const NewsDetailPage = ({ slug }: NewsDetailPageProps) => {
                 </time>
               </div>
             )}
-            {post.author && (
+            {post.authorName && (
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                <span>{post.author.name}</span>
+                <span>{post.authorName}</span>
               </div>
             )}
           </div>

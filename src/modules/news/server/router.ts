@@ -95,6 +95,7 @@ export const create = withPermission("news.create")
         status: input.status,
         coverAssetId: input.coverAssetId,
         authorId: context.user.id,
+        authorName: input.authorName || null,
         ...(input.publishedAt && {
           publishedAt: new Date(input.publishedAt),
         }),

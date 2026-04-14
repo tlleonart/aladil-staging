@@ -355,6 +355,7 @@ model NewsPost {
 
   attachments  NewsAsset[]
 
+  authorName   String?       // Display name (free text, may not be a system user)
   authorId     String?
   author       User?        @relation("NewsAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 

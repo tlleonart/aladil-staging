@@ -149,6 +149,27 @@ export function NewsForm({
 
         <FormField
           control={form.control}
+          name="authorName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Autor</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Nombre del autor (opcional)"
+                  {...field}
+                  value={field.value || ""}
+                />
+              </FormControl>
+              <FormDescription>
+                Si se deja vacío, no se muestra en la noticia.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="slug"
           render={({ field }) => (
             <FormItem>
