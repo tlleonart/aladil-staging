@@ -98,8 +98,9 @@ export const NewsDetailPage = ({ slug }: NewsDetailPageProps) => {
     );
   }
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const coverUrl = post.coverAsset
-    ? `/api/storage/${post.coverAsset.bucket}/${post.coverAsset.path}`
+    ? `${supabaseUrl}/storage/v1/object/public/${post.coverAsset.bucket}/${post.coverAsset.path}`
     : null;
 
   return (
@@ -195,7 +196,7 @@ export const NewsDetailPage = ({ slug }: NewsDetailPageProps) => {
               {post.attachments.map((attachment) => (
                 <li key={attachment.id}>
                   <a
-                    href={`/api/storage/${attachment.asset.bucket}/${attachment.asset.path}`}
+                    href={`${supabaseUrl}/storage/v1/object/public/${attachment.asset.bucket}/${attachment.asset.path}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
