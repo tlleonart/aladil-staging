@@ -97,6 +97,9 @@ export function NewsEditPage({ id }: NewsEditPageProps) {
               content: post.content || "",
               status: post.status,
               coverAssetId: post.coverAssetId || undefined,
+              publishedAt: post.publishedAt
+                ? new Date(post.publishedAt).toISOString().slice(0, 16)
+                : undefined,
             }}
             onSubmit={(data) => updateMutation.mutate(data)}
             isLoading={updateMutation.isPending}

@@ -95,6 +95,9 @@ export const create = withPermission("news.create")
         status: input.status,
         coverAssetId: input.coverAssetId,
         authorId: context.user.id,
+        ...(input.publishedAt && {
+          publishedAt: new Date(input.publishedAt),
+        }),
       },
     });
 
@@ -127,9 +130,15 @@ export const update = withPermission("news.update")
       }
     }
 
+    const { publishedAt, ...rest } = input.data;
     const post = await prisma.newsPost.update({
       where: { id: input.id },
-      data: input.data,
+      data: {
+        ...rest,
+        ...(publishedAt !== undefined && {
+          publishedAt: publishedAt ? new Date(publishedAt) : null,
+        }),
+      },
     });
 
     return post;
@@ -165,7 +174,7 @@ export const publish = withPermission("news.publish")
       where: { id: input.id },
       data: {
         status: "PUBLISHED",
-        publishedAt: new Date(),
+        publishedAt: existing.publishedAt ?? new Date(),
       },
     });
 

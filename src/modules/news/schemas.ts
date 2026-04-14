@@ -21,6 +21,7 @@ export const CreateNewsPostSchema = z.object({
   content: z.any().optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
   coverAssetId: z.string().uuid().optional(),
+  publishedAt: z.string().optional(),
 });
 
 export const UpdateNewsPostSchema = CreateNewsPostSchema.partial();

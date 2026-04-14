@@ -119,6 +119,28 @@ export function NewsForm({
 
         <FormField
           control={form.control}
+          name="publishedAt"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fecha de publicación</FormLabel>
+              <FormControl>
+                <Input
+                  type="datetime-local"
+                  {...field}
+                  value={field.value || ""}
+                />
+              </FormControl>
+              <FormDescription>
+                Si no se indica, se usará la fecha en que se publique la
+                noticia.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="slug"
           render={({ field }) => (
             <FormItem>
