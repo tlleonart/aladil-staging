@@ -25,18 +25,33 @@ interface SendEmailOptions {
 
 export async function sendEmail({ to, subject, html }: SendEmailOptions) {
   if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
-    console.warn("[Email] MAIL_USER/MAIL_PASS not configured, skipping email");
+    console.warn(
+      "[Email] MAIL_USER/MAIL_PASS not configured, skipping email.",
+      `MAIL_USER=${process.env.MAIL_USER ? "set" : "missing"}, MAIL_PASS=${process.env.MAIL_PASS ? "set" : "missing"}`,
+    );
     return;
   }
 
   const recipients = Array.isArray(to) ? to.join(", ") : to;
 
-  await transporter.sendMail({
-    from: FROM_ADDRESS,
-    to: recipients,
-    subject,
-    html,
-  });
+  console.log(
+    `[Email] Sending to=${recipients} subject="${subject}" from=${FROM_ADDRESS} via ${transporter.options.host}:${transporter.options.port}`,
+  );
+
+  try {
+    const info = await transporter.sendMail({
+      from: FROM_ADDRESS,
+      to: recipients,
+      subject,
+      html,
+    });
+    console.log(
+      `[Email] Sent OK — messageId=${info.messageId} accepted=${info.accepted} rejected=${info.rejected}`,
+    );
+  } catch (err) {
+    console.error("[Email] Send failed:", err);
+    throw err;
+  }
 }
 
 export { ADMIN_RECIPIENTS };
