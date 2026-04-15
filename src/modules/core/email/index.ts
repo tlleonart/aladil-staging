@@ -3,7 +3,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_ADDRESS =
-  process.env.RESEND_FROM || "Intranet ALADIL <intranet@aladil.org>";
+  process.env.RESEND_FROM || "Intranet ALADIL <onboarding@resend.dev>";
 
 const ADMIN_RECIPIENTS = [
   "admin@aladil.org",
