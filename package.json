@@ -23,6 +23,8 @@
     "db:reset-meetings": "dotenv -e .env.local -- npx tsx prisma/reset-meetings.ts",
     "db:upload-meeting-images": "dotenv -e .env.local -- npx tsx prisma/upload-meeting-images.ts",
     "db:upload-meeting-gallery": "dotenv -e .env.local -- npx tsx prisma/upload-meeting-gallery.ts",
+    "db:demo": "dotenv -e .env.local -- npx tsx prisma/seed-demo.ts",
+    "db:demo-cleanup": "dotenv -e .env.local -- npx tsx prisma/seed-demo-cleanup.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
