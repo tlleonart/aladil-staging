@@ -1,16 +1,9 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const transporter = nodemailer.createTransport({
-  host: "mail.aladil.org",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_ADDRESS = `"Intranet ALADIL" <${process.env.MAIL_USER || "intranet@aladil.org"}>`;
+const FROM_ADDRESS =
+  process.env.RESEND_FROM || "Intranet ALADIL <intranet@aladil.org>";
 
 const ADMIN_RECIPIENTS = [
   "admin@aladil.org",
@@ -24,34 +17,28 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail({ to, subject, html }: SendEmailOptions) {
-  if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
-    console.warn(
-      "[Email] MAIL_USER/MAIL_PASS not configured, skipping email.",
-      `MAIL_USER=${process.env.MAIL_USER ? "set" : "missing"}, MAIL_PASS=${process.env.MAIL_PASS ? "set" : "missing"}`,
-    );
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("[Email] RESEND_API_KEY not configured, skipping email");
     return;
   }
 
-  const recipients = Array.isArray(to) ? to.join(", ") : to;
+  const recipients = Array.isArray(to) ? to : [to];
 
-  console.log(
-    `[Email] Sending to=${recipients} subject="${subject}" from=${FROM_ADDRESS} via mail.aladil.org:587`,
-  );
+  console.log(`[Email] Sending to=${recipients.join(", ")} subject="${subject}"`);
 
-  try {
-    const info = await transporter.sendMail({
-      from: FROM_ADDRESS,
-      to: recipients,
-      subject,
-      html,
-    });
-    console.log(
-      `[Email] Sent OK — messageId=${info.messageId} accepted=${info.accepted} rejected=${info.rejected}`,
-    );
-  } catch (err) {
-    console.error("[Email] Send failed:", err);
-    throw err;
+  const { data, error } = await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: recipients,
+    subject,
+    html,
+  });
+
+  if (error) {
+    console.error("[Email] Send failed:", error);
+    throw new Error(`Email send failed: ${error.message}`);
   }
+
+  console.log(`[Email] Sent OK — id=${data?.id}`);
 }
 
 export { ADMIN_RECIPIENTS };
