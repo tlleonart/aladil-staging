@@ -35,7 +35,7 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
   const recipients = Array.isArray(to) ? to.join(", ") : to;
 
   console.log(
-    `[Email] Sending to=${recipients} subject="${subject}" from=${FROM_ADDRESS} via ${transporter.options.host}:${transporter.options.port}`,
+    `[Email] Sending to=${recipients} subject="${subject}" from=${FROM_ADDRESS} via mail.aladil.org:587`,
   );
 
   try {
