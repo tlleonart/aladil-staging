@@ -1,7 +1,7 @@
 import * as z from "zod";
 
 export const MeetingSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   number: z.number().int(),
   title: z.string(),
   slug: z.string(),
@@ -11,13 +11,13 @@ export const MeetingSchema = z.object({
   startDate: z.date(),
   endDate: z.date().nullable(),
   hostName: z.string().nullable(),
-  hostLabId: z.string().uuid().nullable(),
+  hostLabId: z.string().min(1).nullable(),
   summary: z.string().nullable(),
   content: z.any().nullable(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
-  coverAssetId: z.string().uuid().nullable(),
-  topicsPdfAssetId: z.string().uuid().nullable(),
-  authorId: z.string().uuid().nullable(),
+  coverAssetId: z.string().min(1).nullable(),
+  topicsPdfAssetId: z.string().min(1).nullable(),
+  authorId: z.string().min(1).nullable(),
   publishedAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -33,12 +33,12 @@ export const CreateMeetingSchema = z.object({
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().optional(),
   hostName: z.string().optional(),
-  hostLabId: z.string().uuid().optional(),
+  hostLabId: z.string().min(1).optional(),
   summary: z.string().optional(),
   content: z.any().optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
-  coverAssetId: z.string().uuid().optional(),
-  topicsPdfAssetId: z.string().uuid().optional(),
+  coverAssetId: z.string().min(1).optional(),
+  topicsPdfAssetId: z.string().min(1).optional(),
 });
 
 export const UpdateMeetingSchema = CreateMeetingSchema.partial();
@@ -46,7 +46,7 @@ export const UpdateMeetingSchema = CreateMeetingSchema.partial();
 export const ListMeetingsQuerySchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
   limit: z.number().int().min(1).max(100).default(20),
-  cursor: z.string().uuid().optional(),
+  cursor: z.string().min(1).optional(),
 });
 
 export type Meeting = z.infer<typeof MeetingSchema>;

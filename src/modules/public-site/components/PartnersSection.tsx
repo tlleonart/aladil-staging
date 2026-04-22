@@ -47,11 +47,12 @@ interface Lab {
   id: string;
   name: string;
   countryCode: string;
-  city: string | null;
-  websiteUrl: string | null;
+  city?: string | null;
+  websiteUrl?: string | null;
   logoAsset: {
-    bucket: string;
-    path: string;
+    bucket?: string;
+    path?: string;
+    url?: string | null;
   } | null;
 }
 
@@ -120,7 +121,7 @@ export const PartnersSection = ({ laboratories }: PartnersSectionProps) => {
                         {lab.logoAsset ? (
                           <div className="w-12 h-12 rounded-lg bg-white border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                             <img
-                              src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${lab.logoAsset.bucket}/${lab.logoAsset.path}`}
+                              src={`${lab.logoAsset.url ?? ""}`}
                               alt={lab.name}
                               className="w-10 h-10 object-contain"
                             />

@@ -3,7 +3,7 @@ import * as z from "zod";
 // ── Indicator schema ──────────────────────────────────────────────
 
 export const PilaIndicatorSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   code: z.string().min(1),
   name: z.string().min(1),
   formula: z.string().min(1),
@@ -35,7 +35,7 @@ export const UpdatePilaIndicatorSchema = CreatePilaIndicatorSchema.partial();
 // ── Report value schema ───────────────────────────────────────────
 
 export const ReportValueInputSchema = z.object({
-  indicatorId: z.string().uuid(),
+  indicatorId: z.string().min(1),
   numerator: z.number().min(0).nullable().optional(),
   denominator: z.number().min(0).nullable().optional(),
   doesNotReport: z.boolean().default(false),
@@ -59,7 +59,7 @@ export const ListPilaReportsQuerySchema = z.object({
   year: z.number().int().min(2020).max(2100).optional(),
   month: z.number().int().min(1).max(12).optional(),
   status: z.enum(["DRAFT", "SUBMITTED", "REVIEWED"]).optional(),
-  labId: z.string().uuid().optional(),
+  labId: z.string().min(1).optional(),
 });
 
 // ── Report generation schemas ─────────────────────────────────────
@@ -69,7 +69,7 @@ export const PilaReportQuerySchema = z.object({
   monthFrom: z.number().int().min(1).max(12),
   yearTo: z.number().int().min(2020).max(2100),
   monthTo: z.number().int().min(1).max(12),
-  labId: z.string().uuid().optional(),
+  labId: z.string().min(1).optional(),
 });
 
 // ── Types ─────────────────────────────────────────────────────────

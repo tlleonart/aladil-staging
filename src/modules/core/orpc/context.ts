@@ -1,20 +1,32 @@
-import { headers } from "next/headers";
-import { auth } from "@/modules/core/auth/auth";
+import type { ConvexHttpClient } from "convex/browser";
+import { api } from "@/../convex/_generated/api";
+import type { Id } from "@/../convex/_generated/dataModel";
+import { createConvexClient } from "@/modules/core/convex/server";
 
-type SessionData = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
+export interface SessionUser {
+  id: Id<"users">;
+  email: string;
+  name: string;
+  isSuperAdmin: boolean;
+  labId: Id<"labs"> | null;
+  labName: string | null;
+  effectiveRole: "admin" | "director" | "reporter";
+  permissions: string[];
+}
 
 export interface Context {
-  session: SessionData | null;
-  user: SessionData["user"] | null;
+  convex: ConvexHttpClient;
+  user: SessionUser | null;
 }
 
 export async function createContext(): Promise<Context> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  return {
-    session: session ?? null,
-    user: session?.user ?? null,
-  };
+  const convex = await createConvexClient();
+  let user: SessionUser | null = null;
+  try {
+    const me = await convex.query(api.users.me, {});
+    user = me as SessionUser | null;
+  } catch {
+    user = null;
+  }
+  return { convex, user };
 }

@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authClient } from "@/modules/core/auth/auth-client";
+import { useAuthActions } from "@convex-dev/auth/react";
 
 export const LoginPage = () => {
   const router = useRouter();
+  const { signIn } = useAuthActions();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -22,33 +23,27 @@ export const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await authClient.signIn.email({
-        email,
-        password,
-      });
-
-      if (error) {
-        // Better Auth returns English messages; translate common ones
-        const msg = error.message?.toLowerCase() || "";
-        if (
-          msg.includes("invalid") ||
-          msg.includes("password") ||
-          msg.includes("email")
-        ) {
-          setError("Correo electrónico o contraseña incorrectos");
-        } else {
-          setError(error.message || "Credenciales inválidas");
-        }
-      } else {
-        router.push("/admin");
-        router.refresh();
-      }
+      await signIn("password", { email, password, flow: "signIn" });
+      router.push("/admin");
+      router.refresh();
     } catch (err) {
-      const message =
-        err instanceof TypeError && err.message.includes("fetch")
-          ? "No se pudo conectar con el servidor. Verifica tu conexión."
-          : "Ocurrió un error inesperado. Intenta nuevamente.";
-      setError(message);
+      const msg = err instanceof Error ? err.message.toLowerCase() : "";
+      if (
+        msg.includes("invalid") ||
+        msg.includes("password") ||
+        msg.includes("credential") ||
+        msg.includes("invalidaccountid")
+      ) {
+        setError("Correo electrónico o contraseña incorrectos");
+      } else if (err instanceof TypeError && err.message.includes("fetch")) {
+        setError("No se pudo conectar con el servidor. Verifica tu conexión.");
+      } else {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Ocurrió un error inesperado. Intenta nuevamente.",
+        );
+      }
     } finally {
       setIsLoading(false);
     }

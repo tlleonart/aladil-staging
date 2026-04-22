@@ -22,17 +22,17 @@ import {
 /** Shape returned by the users.list endpoint (matches userSelect) */
 interface UserRow {
   id: string;
-  email: string;
-  name: string;
+  email?: string;
+  name?: string;
   isActive: boolean;
   isSuperAdmin: boolean;
-  labId: string | null;
+  labId?: string | null;
   lab: { id: string; name: string } | null;
   createdAt: string | Date;
   updatedAt: string | Date;
   memberships: Array<{
-    project: { id: string; key: string; name: string };
-    role: { id: string; key: string; name: string };
+    project: { id: string; key: string; name: string } | null;
+    role: { id: string; key: string; name: string } | null;
   }>;
 }
 
@@ -109,14 +109,16 @@ export function getUsersColumns({
 
         return (
           <div className="flex flex-wrap gap-1">
-            {memberships.map((m) => (
-              <Badge
-                key={m.project.key}
-                className={ROLE_COLORS[m.role.key] ?? ""}
-              >
-                {ROLE_LABELS[m.role.key] ?? m.role.name}
-              </Badge>
-            ))}
+            {memberships
+              .filter((m) => m.project && m.role)
+              .map((m) => (
+                <Badge
+                  key={m.project!.key}
+                  className={ROLE_COLORS[m.role!.key] ?? ""}
+                >
+                  {ROLE_LABELS[m.role!.key] ?? m.role!.name}
+                </Badge>
+              ))}
           </div>
         );
       },

@@ -1,8 +1,8 @@
 import * as z from "zod";
-import { hasPermission } from "@/modules/core/auth/rbac";
-import { prisma } from "@/modules/core/db";
+import { api } from "@/../convex/_generated/api";
+import type { Id } from "@/../convex/_generated/dataModel";
+import { fromConvex } from "@/modules/core/orpc/errors";
 import {
-  ORPCError,
   protectedProcedure,
   publicProcedure,
 } from "@/modules/core/orpc/server";
@@ -12,161 +12,105 @@ import {
   UpdateLabSchema,
 } from "../schemas";
 
-// Public list - for public website (no auth required)
 export const publicList = publicProcedure
   .input(
     z.object({
       limit: z.number().int().min(1).max(100).default(50),
     }),
   )
-  .handler(async ({ input }) => {
-    const labs = await prisma.lab.findMany({
-      where: {
-        isActive: true,
-        // Exclude internal ALADIL lab from public listing
-        id: { not: "00000000-0000-0000-0000-000000000001" },
-      },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      take: input.limit,
-      include: {
-        logoAsset: true,
-      },
-    });
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.query(api.labs.publicList, { limit: input.limit }),
+    ),
+  );
 
-    return labs;
-  });
-
-// Permission check middleware
-const withPermission = (permission: string) =>
-  protectedProcedure.use(async ({ context, next }) => {
-    const allowed = await hasPermission(context.user.id, "LABS", permission);
-    if (!allowed) {
-      throw new ORPCError("FORBIDDEN", {
-        message: `Permission denied: ${permission}`,
-      });
-    }
-    return next({ context });
-  });
-
-// List labs
-export const list = withPermission("labs.read")
+export const list = protectedProcedure
   .input(ListLabsQuerySchema)
-  .handler(async ({ input }) => {
-    const { isActive, countryCode, limit, cursor } = input;
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.query(api.labs.list, {
+        isActive: input.isActive,
+        countryCode: input.countryCode,
+        limit: input.limit,
+        cursor: input.cursor,
+      }),
+    ),
+  );
 
-    const labs = await prisma.lab.findMany({
-      where: {
-        ...(isActive !== undefined && { isActive }),
-        ...(countryCode && { countryCode }),
-        ...(cursor && { id: { lt: cursor } }),
-      },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      take: limit,
-      include: {
-        logoAsset: true,
-      },
-    });
+export const getById = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.query(api.labs.getById, { id: input.id as Id<"labs"> }),
+    ),
+  );
 
-    return labs;
-  });
-
-// Get single lab by ID
-export const getById = withPermission("labs.read")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const lab = await prisma.lab.findUnique({
-      where: { id: input.id },
-      include: {
-        logoAsset: true,
-        executiveMembers: {
-          where: { isActive: true },
-          orderBy: { sortOrder: "asc" },
-        },
-      },
-    });
-
-    if (!lab) {
-      throw new ORPCError("NOT_FOUND", { message: "Lab not found" });
-    }
-
-    return lab;
-  });
-
-// Create lab
-export const create = withPermission("labs.create")
+export const create = protectedProcedure
   .input(CreateLabSchema)
-  .handler(async ({ input }) => {
-    const lab = await prisma.lab.create({
-      data: {
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.labs.create, {
         name: input.name,
         countryCode: input.countryCode,
-        city: input.city,
-        websiteUrl: input.websiteUrl || null,
+        city: input.city ?? undefined,
+        websiteUrl: input.websiteUrl ?? null,
         isActive: input.isActive,
         sortOrder: input.sortOrder,
-        logoAssetId: input.logoAssetId,
-      },
-    });
+        logoAssetId: input.logoAssetId
+          ? (input.logoAssetId as Id<"assets">)
+          : null,
+      }),
+    ),
+  );
 
-    return lab;
-  });
-
-// Update lab
-export const update = withPermission("labs.update")
+export const update = protectedProcedure
   .input(
     z.object({
-      id: z.string().uuid(),
+      id: z.string().min(1),
       data: UpdateLabSchema,
     }),
   )
-  .handler(async ({ input }) => {
-    const existing = await prisma.lab.findUnique({ where: { id: input.id } });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", { message: "Lab not found" });
-    }
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.labs.update, {
+        id: input.id as Id<"labs">,
+        data: {
+          name: input.data.name,
+          countryCode: input.data.countryCode,
+          city: input.data.city,
+          websiteUrl: input.data.websiteUrl,
+          isActive: input.data.isActive,
+          sortOrder: input.data.sortOrder,
+          logoAssetId:
+            input.data.logoAssetId === undefined
+              ? undefined
+              : input.data.logoAssetId
+                ? (input.data.logoAssetId as Id<"assets">)
+                : null,
+        },
+      }),
+    ),
+  );
 
-    const { websiteUrl, ...rest } = input.data;
+export const remove = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.labs.remove, {
+        id: input.id as Id<"labs">,
+      }),
+    ),
+  );
 
-    const lab = await prisma.lab.update({
-      where: { id: input.id },
-      data: {
-        ...rest,
-        ...(websiteUrl !== undefined && { websiteUrl: websiteUrl || null }),
-      },
-    });
-
-    return lab;
-  });
-
-// Delete lab
-export const remove = withPermission("labs.delete")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const existing = await prisma.lab.findUnique({ where: { id: input.id } });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", { message: "Lab not found" });
-    }
-
-    await prisma.lab.delete({ where: { id: input.id } });
-    return { success: true };
-  });
-
-// Toggle active status
-export const toggleActive = withPermission("labs.update")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const existing = await prisma.lab.findUnique({ where: { id: input.id } });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", { message: "Lab not found" });
-    }
-
-    const lab = await prisma.lab.update({
-      where: { id: input.id },
-      data: { isActive: !existing.isActive },
-    });
-
-    return lab;
-  });
+export const toggleActive = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.labs.toggleActive, {
+        id: input.id as Id<"labs">,
+      }),
+    ),
+  );
 
 export const labsRouter = {
   publicList,

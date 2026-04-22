@@ -1,150 +1,72 @@
 import * as z from "zod";
-import { hasPermission } from "@/modules/core/auth/rbac";
-import { prisma } from "@/modules/core/db";
+import { api } from "@/../convex/_generated/api";
+import type { Id } from "@/../convex/_generated/dataModel";
+import { fromConvex } from "@/modules/core/orpc/errors";
 import {
-  ORPCError,
   protectedProcedure,
   publicProcedure,
 } from "@/modules/core/orpc/server";
-import { CreateContactInputSchema, ListContactQuerySchema } from "../schemas";
+import {
+  CreateContactInputSchema,
+  ListContactQuerySchema,
+} from "../schemas";
 
-// Permission check middleware
-const withPermission = (permission: string) =>
-  protectedProcedure.use(async ({ context, next }) => {
-    const allowed = await hasPermission(
-      context.user.id,
-      "SETTINGS",
-      permission,
-    );
-    if (!allowed) {
-      throw new ORPCError("FORBIDDEN", {
-        message: `Permission denied: ${permission}`,
-      });
-    }
-    return next({ context });
-  });
-
-// List contact messages
-export const list = withPermission("contact.read")
+export const list = protectedProcedure
   .input(ListContactQuerySchema)
-  .handler(async ({ input }) => {
-    const { status, limit, cursor } = input;
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.query(api.contact.list, {
+        status: input.status,
+        limit: input.limit,
+      }),
+    ),
+  );
 
-    const messages = await prisma.contactMessage.findMany({
-      where: {
-        ...(status && { status }),
-        ...(cursor && { id: { lt: cursor } }),
-      },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-    });
+export const getById = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.contact.getById, {
+        id: input.id as Id<"contactMessages">,
+      }),
+    ),
+  );
 
-    return messages;
-  });
+export const markAsRead = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.contact.markAsRead, {
+        id: input.id as Id<"contactMessages">,
+      }),
+    ),
+  );
 
-// Get single contact message by ID
-export const getById = withPermission("contact.read")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const message = await prisma.contactMessage.findUnique({
-      where: { id: input.id },
-    });
+export const archive = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.contact.archive, {
+        id: input.id as Id<"contactMessages">,
+      }),
+    ),
+  );
 
-    if (!message) {
-      throw new ORPCError("NOT_FOUND", {
-        message: "Contact message not found",
-      });
-    }
+export const unarchive = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.contact.unarchive, {
+        id: input.id as Id<"contactMessages">,
+      }),
+    ),
+  );
 
-    // Mark as read if it was new
-    if (message.status === "NEW") {
-      await prisma.contactMessage.update({
-        where: { id: input.id },
-        data: { status: "READ" },
-      });
-    }
-
-    return message;
-  });
-
-// Mark message as read
-export const markAsRead = withPermission("contact.read")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const existing = await prisma.contactMessage.findUnique({
-      where: { id: input.id },
-    });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", {
-        message: "Contact message not found",
-      });
-    }
-
-    const message = await prisma.contactMessage.update({
-      where: { id: input.id },
-      data: { status: "READ" },
-    });
-
-    return message;
-  });
-
-// Archive message
-export const archive = withPermission("contact.archive")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const existing = await prisma.contactMessage.findUnique({
-      where: { id: input.id },
-    });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", {
-        message: "Contact message not found",
-      });
-    }
-
-    const message = await prisma.contactMessage.update({
-      where: { id: input.id },
-      data: { status: "ARCHIVED" },
-    });
-
-    return message;
-  });
-
-// Unarchive message (restore to READ)
-export const unarchive = withPermission("contact.archive")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const existing = await prisma.contactMessage.findUnique({
-      where: { id: input.id },
-    });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", {
-        message: "Contact message not found",
-      });
-    }
-
-    const message = await prisma.contactMessage.update({
-      where: { id: input.id },
-      data: { status: "READ" },
-    });
-
-    return message;
-  });
-
-// Public: Create a new contact message (no auth required)
 export const create = publicProcedure
   .input(CreateContactInputSchema)
-  .handler(async ({ input }) => {
-    const message = await prisma.contactMessage.create({
-      data: {
-        name: input.name,
-        email: input.email,
-        message: input.message,
-        status: "NEW",
-      },
-    });
-
-    return { success: true, id: message.id };
-  });
+  .handler(async ({ input, context }) =>
+    fromConvex(() => context.convex.mutation(api.contact.create, input)),
+  );
 
 export const contactRouter = {
   list,

@@ -8,12 +8,13 @@ import {
   NewspaperIcon,
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
-import { headers } from "next/headers";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { auth } from "@/modules/core/auth/auth";
-import { prisma } from "@/modules/core/db";
+import { api } from "@/../convex/_generated/api";
+import type { Id } from "@/../convex/_generated/dataModel";
+import { requireServerUser } from "@/modules/core/auth/server";
+import { createConvexClient } from "@/modules/core/convex/server";
 
 const MONTHS = [
   "Enero",
@@ -31,38 +32,10 @@ const MONTHS = [
 ];
 
 export default async function DashboardPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await requireServerUser();
 
-  if (!session) return null;
-
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      id: true,
-      name: true,
-      isSuperAdmin: true,
-      labId: true,
-      lab: { select: { id: true, name: true } },
-      memberships: {
-        where: { isActive: true },
-        include: {
-          project: { select: { key: true } },
-          role: { select: { key: true } },
-        },
-      },
-    },
-  });
-
-  if (!user) return null;
-
-  // Determine effective role
-  const intranetMembership = user.memberships.find(
-    (m) => m.project.key === "INTRANET",
-  );
-  const isAdmin = user.isSuperAdmin || intranetMembership?.role.key === "admin";
-  const isDirector = intranetMembership?.role.key === "director";
+  const isAdmin = user.effectiveRole === "admin";
+  const isDirector = user.effectiveRole === "director";
 
   if (isAdmin || isDirector) {
     return <AdminDashboard userName={user.name || "Administrador"} />;
@@ -71,7 +44,7 @@ export default async function DashboardPage() {
   return (
     <ReporterDashboard
       userName={user.name || "Usuario"}
-      labName={user.lab?.name ?? null}
+      labName={user.labName}
       labId={user.labId}
     />
   );
@@ -86,12 +59,17 @@ async function AdminDashboard({ userName }: { userName: string }) {
   let executiveCount = 0;
 
   try {
-    [newsCount, meetingsCount, labsCount, executiveCount] = await Promise.all([
-      prisma.newsPost.count(),
-      prisma.meeting.count(),
-      prisma.lab.count(),
-      prisma.executiveMember.count(),
+    const convex = await createConvexClient();
+    const [news, meetings, labs, execs] = await Promise.all([
+      convex.query(api.news.list, { limit: 100 }),
+      convex.query(api.meetings.list, { limit: 100 }),
+      convex.query(api.labs.list, { limit: 100 }),
+      convex.query(api.executive.list, { limit: 100 }),
     ]);
+    newsCount = news.length;
+    meetingsCount = meetings.length;
+    labsCount = labs.length;
+    executiveCount = execs.length;
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
   }
@@ -179,46 +157,36 @@ async function ReporterDashboard({
   const currentMonth = now.getMonth() + 1;
   const monthName = MONTHS[currentMonth - 1];
 
-  // Fetch reporter-relevant data
   let currentReport: { id: string; status: string } | null = null;
   let recentReports: Array<{
     id: string;
     year: number;
     month: number;
     status: string;
-    submittedAt: Date | null;
+    submittedAt: string | null;
   }> = [];
   let totalSubmitted = 0;
 
   if (labId) {
     try {
-      [currentReport, recentReports, totalSubmitted] = await Promise.all([
-        prisma.pilaReport.findUnique({
-          where: {
-            labId_year_month: {
-              labId,
-              year: currentYear,
-              month: currentMonth,
-            },
-          },
-          select: { id: true, status: true },
-        }),
-        prisma.pilaReport.findMany({
-          where: { labId },
-          orderBy: [{ year: "desc" }, { month: "desc" }],
-          take: 6,
-          select: {
-            id: true,
-            year: true,
-            month: true,
-            status: true,
-            submittedAt: true,
-          },
-        }),
-        prisma.pilaReport.count({
-          where: { labId, status: { in: ["SUBMITTED", "REVIEWED"] } },
-        }),
-      ]);
+      const convex = await createConvexClient();
+      const myReports = await convex.query(api.pila.myReports, {});
+      const thisMonth = myReports.find(
+        (r) => r.year === currentYear && r.month === currentMonth,
+      );
+      if (thisMonth) {
+        currentReport = { id: thisMonth.id, status: thisMonth.status };
+      }
+      recentReports = myReports.slice(0, 6).map((r) => ({
+        id: r.id,
+        year: r.year,
+        month: r.month,
+        status: r.status,
+        submittedAt: r.submittedAt,
+      }));
+      totalSubmitted = myReports.filter(
+        (r) => r.status === "SUBMITTED" || r.status === "REVIEWED",
+      ).length;
     } catch (error) {
       console.error("Error fetching reporter dashboard:", error);
     }
@@ -234,7 +202,6 @@ async function ReporterDashboard({
         {labName && <p className="text-neutral-500">{labName}</p>}
       </div>
 
-      {/* Status cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -288,7 +255,6 @@ async function ReporterDashboard({
         </Card>
       </div>
 
-      {/* Quick action */}
       {(hasPendingReport || isDraft) && (
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="flex items-center justify-between py-4">
@@ -322,7 +288,6 @@ async function ReporterDashboard({
         </Card>
       )}
 
-      {/* Recent reports */}
       {recentReports.length > 0 && (
         <Card>
           <CardHeader>

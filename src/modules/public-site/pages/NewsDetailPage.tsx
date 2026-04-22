@@ -11,7 +11,7 @@ interface NewsDetailPageProps {
   slug: string;
 }
 
-const formatDate = (date: Date | null): string => {
+const formatDate = (date: Date | string | null | undefined): string => {
   if (!date) return "";
   return new Intl.DateTimeFormat("es-ES", {
     weekday: "long",
@@ -98,10 +98,7 @@ export const NewsDetailPage = ({ slug }: NewsDetailPageProps) => {
     );
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const coverUrl = post.coverAsset
-    ? `${supabaseUrl}/storage/v1/object/public/${post.coverAsset.bucket}/${post.coverAsset.path}`
-    : null;
+  const coverUrl = post.coverAsset?.url ?? null;
 
   return (
     <div className="bg-white">
@@ -196,7 +193,7 @@ export const NewsDetailPage = ({ slug }: NewsDetailPageProps) => {
               {post.attachments.map((attachment) => (
                 <li key={attachment.id}>
                   <a
-                    href={`${supabaseUrl}/storage/v1/object/public/${attachment.asset.bucket}/${attachment.asset.path}`}
+                    href={attachment.asset?.url ?? ""}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
@@ -214,7 +211,7 @@ export const NewsDetailPage = ({ slug }: NewsDetailPageProps) => {
                         d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    {attachment.asset.filename}
+                    {attachment.asset?.filename ?? "Archivo"}
                   </a>
                 </li>
               ))}

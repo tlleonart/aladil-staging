@@ -1,15 +1,15 @@
 import * as z from "zod";
 
 export const ExecutiveMemberSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   fullName: z.string(),
   position: z.string(),
   countryCode: z.string(),
   sortOrder: z.number(),
   isActive: z.boolean(),
-  labId: z.string().uuid().nullable(),
-  photoAssetId: z.string().uuid().nullable(),
-  flagAssetId: z.string().uuid().nullable(),
+  labId: z.string().min(1).nullable(),
+  photoAssetId: z.string().min(1).nullable(),
+  flagAssetId: z.string().min(1).nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -20,9 +20,9 @@ export const CreateExecutiveMemberSchema = z.object({
   countryCode: z.string().length(2, "Country code must be 2 characters"),
   sortOrder: z.number().int(),
   isActive: z.boolean(),
-  labId: z.string().uuid().optional(),
-  photoAssetId: z.string().uuid().optional(),
-  flagAssetId: z.string().uuid().optional(),
+  labId: z.string().min(1).optional(),
+  photoAssetId: z.string().min(1).optional(),
+  flagAssetId: z.string().min(1).optional(),
 });
 
 export const UpdateExecutiveMemberSchema =
@@ -32,7 +32,7 @@ export const ListExecutiveQuerySchema = z.object({
   isActive: z.boolean().optional(),
   countryCode: z.string().optional(),
   limit: z.number().int().min(1).max(100).default(50),
-  cursor: z.string().uuid().optional(),
+  cursor: z.string().min(1).optional(),
 });
 
 export type ExecutiveMember = z.infer<typeof ExecutiveMemberSchema>;

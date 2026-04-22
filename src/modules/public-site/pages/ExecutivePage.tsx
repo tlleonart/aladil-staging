@@ -1,21 +1,12 @@
 import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { prisma } from "@/modules/core/db";
+import { api } from "@/../convex/_generated/api";
+import { createAnonymousConvexClient } from "@/modules/core/convex/server";
 
-// Fetch active executive members
 async function getExecutiveMembers() {
-  const members = await prisma.executiveMember.findMany({
-    where: { isActive: true },
-    orderBy: [{ sortOrder: "asc" }, { fullName: "asc" }],
-    take: 50,
-    include: {
-      lab: { select: { id: true, name: true } },
-      photoAsset: true,
-    },
-  });
-
-  return members;
+  const convex = createAnonymousConvexClient();
+  return await convex.query(api.executive.listPublic, { limit: 50 });
 }
 
 export const ExecutivePage = async () => {
@@ -93,7 +84,7 @@ export const ExecutivePage = async () => {
                     <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden bg-gray-100">
                       {member.photoAsset ? (
                         <img
-                          src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${member.photoAsset.bucket}/${member.photoAsset.path}`}
+                          src={`${member.photoAsset.url ?? ""}`}
                           alt={member.fullName}
                           className="w-full h-full object-cover"
                         />

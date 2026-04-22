@@ -1,8 +1,8 @@
 import * as z from "zod";
-import { hasPermission } from "@/modules/core/auth/rbac";
-import { prisma } from "@/modules/core/db";
+import { api } from "@/../convex/_generated/api";
+import type { Id } from "@/../convex/_generated/dataModel";
+import { fromConvex } from "@/modules/core/orpc/errors";
 import {
-  ORPCError,
   protectedProcedure,
   publicProcedure,
 } from "@/modules/core/orpc/server";
@@ -12,254 +12,121 @@ import {
   UpdateNewsPostSchema,
 } from "../schemas";
 
-// Helper to generate slug from title
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
+const coerceAsset = (v: string | null | undefined) =>
+  v ? (v as Id<"assets">) : null;
 
-// Permission check middleware
-const withPermission = (permission: string) =>
-  protectedProcedure.use(async ({ context, next }) => {
-    const allowed = await hasPermission(context.user.id, "NEWS", permission);
-    if (!allowed) {
-      throw new ORPCError("FORBIDDEN", {
-        message: `Permission denied: ${permission}`,
-      });
-    }
-    return next({ context });
-  });
-
-// List news posts
-export const list = withPermission("news.read")
+export const list = protectedProcedure
   .input(ListNewsQuerySchema)
-  .handler(async ({ input }) => {
-    const { status, limit, cursor } = input;
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.query(api.news.list, {
+        status: input.status,
+        limit: input.limit,
+        cursor: input.cursor,
+      }),
+    ),
+  );
 
-    const posts = await prisma.newsPost.findMany({
-      where: {
-        ...(status && { status }),
-        ...(cursor && { id: { lt: cursor } }),
-      },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-      include: {
-        author: { select: { id: true, name: true, email: true } },
-        coverAsset: true,
-      },
-    });
+export const getById = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.query(api.news.getById, {
+        id: input.id as Id<"newsPosts">,
+      }),
+    ),
+  );
 
-    return posts;
-  });
-
-// Get single news post by ID
-export const getById = withPermission("news.read")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const post = await prisma.newsPost.findUnique({
-      where: { id: input.id },
-      include: {
-        author: { select: { id: true, name: true, email: true } },
-        coverAsset: true,
-        attachments: { include: { asset: true } },
-      },
-    });
-
-    if (!post) {
-      throw new ORPCError("NOT_FOUND", { message: "News post not found" });
-    }
-
-    return post;
-  });
-
-// Create news post
-export const create = withPermission("news.create")
+export const create = protectedProcedure
   .input(CreateNewsPostSchema)
-  .handler(async ({ input, context }) => {
-    const slug = input.slug || generateSlug(input.title);
-
-    // Check if slug already exists
-    const existing = await prisma.newsPost.findUnique({ where: { slug } });
-    if (existing) {
-      throw new ORPCError("BAD_REQUEST", { message: "Slug already exists" });
-    }
-
-    const post = await prisma.newsPost.create({
-      data: {
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.news.create, {
         title: input.title,
-        slug,
+        slug: input.slug,
         excerpt: input.excerpt,
         content: input.content,
         status: input.status,
-        coverAssetId: input.coverAssetId,
-        authorId: context.user.id,
-        authorName: input.authorName || null,
-        ...(input.publishedAt && {
-          publishedAt: new Date(input.publishedAt),
-        }),
-      },
-    });
+        coverAssetId: coerceAsset(input.coverAssetId),
+        authorName: input.authorName,
+        publishedAt: input.publishedAt,
+      }),
+    ),
+  );
 
-    return post;
-  });
+export const update = protectedProcedure
+  .input(z.object({ id: z.string().min(1), data: UpdateNewsPostSchema }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.news.update, {
+        id: input.id as Id<"newsPosts">,
+        data: {
+          title: input.data.title,
+          slug: input.data.slug,
+          excerpt: input.data.excerpt,
+          content: input.data.content,
+          status: input.data.status,
+          coverAssetId:
+            input.data.coverAssetId === undefined
+              ? undefined
+              : coerceAsset(input.data.coverAssetId),
+          authorName: input.data.authorName,
+          publishedAt: input.data.publishedAt,
+        },
+      }),
+    ),
+  );
 
-// Update news post
-export const update = withPermission("news.update")
-  .input(
-    z.object({
-      id: z.string().uuid(),
-      data: UpdateNewsPostSchema,
-    }),
-  )
-  .handler(async ({ input }) => {
-    const existing = await prisma.newsPost.findUnique({
-      where: { id: input.id },
-    });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", { message: "News post not found" });
-    }
+export const remove = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.news.remove, {
+        id: input.id as Id<"newsPosts">,
+      }),
+    ),
+  );
 
-    // If slug is being changed, check for uniqueness
-    if (input.data.slug && input.data.slug !== existing.slug) {
-      const slugExists = await prisma.newsPost.findUnique({
-        where: { slug: input.data.slug },
-      });
-      if (slugExists) {
-        throw new ORPCError("BAD_REQUEST", { message: "Slug already exists" });
-      }
-    }
+export const publish = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.news.publish, {
+        id: input.id as Id<"newsPosts">,
+      }),
+    ),
+  );
 
-    const { publishedAt, ...rest } = input.data;
-    const post = await prisma.newsPost.update({
-      where: { id: input.id },
-      data: {
-        ...rest,
-        ...(publishedAt !== undefined && {
-          publishedAt: publishedAt ? new Date(publishedAt) : null,
-        }),
-      },
-    });
+export const archive = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.news.archive, {
+        id: input.id as Id<"newsPosts">,
+      }),
+    ),
+  );
 
-    return post;
-  });
-
-// Delete news post
-export const remove = withPermission("news.delete")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const existing = await prisma.newsPost.findUnique({
-      where: { id: input.id },
-    });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", { message: "News post not found" });
-    }
-
-    await prisma.newsPost.delete({ where: { id: input.id } });
-    return { success: true };
-  });
-
-// Publish news post
-export const publish = withPermission("news.publish")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const existing = await prisma.newsPost.findUnique({
-      where: { id: input.id },
-    });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", { message: "Noticia no encontrada" });
-    }
-
-    const post = await prisma.newsPost.update({
-      where: { id: input.id },
-      data: {
-        status: "PUBLISHED",
-        publishedAt: existing.publishedAt ?? new Date(),
-      },
-    });
-
-    return post;
-  });
-
-// Unpublish (archive) news post
-export const archive = withPermission("news.publish")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const existing = await prisma.newsPost.findUnique({
-      where: { id: input.id },
-    });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", { message: "Noticia no encontrada" });
-    }
-
-    const post = await prisma.newsPost.update({
-      where: { id: input.id },
-      data: { status: "ARCHIVED" },
-    });
-
-    return post;
-  });
-
-// ==========================================
-// PUBLIC PROCEDURES (no auth required)
-// ==========================================
-
-// List published news posts (public)
 export const listPublished = publicProcedure
   .input(
     z.object({
       limit: z.number().int().min(1).max(100).default(20),
-      cursor: z.string().uuid().optional(),
+      cursor: z.string().min(1).optional(),
     }),
   )
-  .handler(async ({ input }) => {
-    const { limit, cursor } = input;
+  .handler(async ({ input, context }) =>
+    fromConvex(() => context.convex.query(api.news.listPublished, input)),
+  );
 
-    const posts = await prisma.newsPost.findMany({
-      where: {
-        status: "PUBLISHED",
-        ...(cursor && { id: { lt: cursor } }),
-      },
-      orderBy: { publishedAt: "desc" },
-      take: limit,
-      include: {
-        author: { select: { id: true, name: true } },
-        coverAsset: true,
-      },
-    });
-
-    return posts;
-  });
-
-// Get single published news post by slug (public)
 export const getBySlug = publicProcedure
   .input(z.object({ slug: z.string() }))
-  .handler(async ({ input }) => {
-    const post = await prisma.newsPost.findFirst({
-      where: {
-        slug: input.slug,
-        status: "PUBLISHED",
-      },
-      include: {
-        author: { select: { id: true, name: true } },
-        coverAsset: true,
-        attachments: { include: { asset: true } },
-      },
-    });
-
-    if (!post) {
-      throw new ORPCError("NOT_FOUND", { message: "News post not found" });
-    }
-
-    return post;
-  });
+  .handler(async ({ input, context }) =>
+    fromConvex(() => context.convex.query(api.news.getBySlug, input)),
+  );
 
 export const newsRouter = {
-  // Public procedures
   listPublished,
   getBySlug,
-  // Protected procedures
   list,
   getById,
   create,

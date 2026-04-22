@@ -28,6 +28,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@convex-dev/auth": "^0.0.91",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.2",
     "@orpc/client": "^1.13.2",
@@ -63,6 +64,7 @@
     "better-auth": "^1.4.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "convex": "^1.36.0",
     "dompurify": "^3.3.3",
     "dotenv": "^17.2.3",
     "embla-carousel-autoplay": "^8.6.0",

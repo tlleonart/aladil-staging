@@ -332,7 +332,7 @@ function MonthlyReport() {
     mutationFn: (data: {
       year: number;
       month: number;
-      storagePath: string;
+      storageId: string;
       filename: string;
       sizeBytes?: number;
     }) => orpc.pila.publishReport(data),
@@ -355,11 +355,9 @@ function MonthlyReport() {
       });
       if (!result) return;
 
-      // Upload via server-side API (uses service role key to bypass RLS)
-      const storagePath = `pila-reports/${year}-${String(month).padStart(2, "0")}.pdf`;
+      // Upload via server-side API (now backed by Convex Storage)
       const formData = new FormData();
       formData.append("file", result.blob, result.filename);
-      formData.append("storagePath", storagePath);
       const uploadRes = await fetch("/api/pila/upload", {
         method: "POST",
         body: formData,
@@ -369,12 +367,15 @@ function MonthlyReport() {
         const body = await uploadRes.json().catch(() => ({}));
         throw new Error(body.error || "Error al subir el archivo");
       }
+      const { storageId } = (await uploadRes.json()) as {
+        storageId: string;
+      };
 
       // Save record in DB
       await publishMutation.mutateAsync({
         year,
         month,
-        storagePath,
+        storageId,
         filename: result.filename,
         sizeBytes: result.blob.size,
       });

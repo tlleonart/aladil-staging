@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { authClient } from "@/modules/core/auth/auth-client";
+import { useAuthActions } from "@convex-dev/auth/react";
 
 interface HeaderProps {
   user: {
@@ -25,9 +25,10 @@ interface HeaderProps {
 
 export const Header = ({ user, onMenuClick }: HeaderProps) => {
   const router = useRouter();
+  const { signOut } = useAuthActions();
 
   const handleSignOut = async () => {
-    await authClient.signOut();
+    await signOut();
     router.push("/login");
   };
 

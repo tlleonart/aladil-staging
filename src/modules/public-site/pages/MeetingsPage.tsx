@@ -2,21 +2,12 @@ import { Calendar, MapPin } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { prisma } from "@/modules/core/db";
+import { api } from "@/../convex/_generated/api";
+import { createAnonymousConvexClient } from "@/modules/core/convex/server";
 
-// Fetch published meetings
 async function getMeetings() {
-  const meetings = await prisma.meeting.findMany({
-    where: { status: "PUBLISHED" },
-    orderBy: { number: "desc" },
-    take: 50,
-    include: {
-      coverAsset: true,
-      hostLab: { select: { id: true, name: true } },
-    },
-  });
-
-  return meetings;
+  const convex = createAnonymousConvexClient();
+  return await convex.query(api.meetings.listPublished, { limit: 50 });
 }
 
 export const MeetingsPage = async () => {
@@ -75,7 +66,7 @@ export const MeetingsPage = async () => {
                     <div className="aspect-video bg-gray-100 rounded-t-xl overflow-hidden">
                       {meeting.coverAsset ? (
                         <img
-                          src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${meeting.coverAsset.bucket}/${meeting.coverAsset.path}`}
+                          src={`${meeting.coverAsset.url ?? ""}`}
                           alt={meeting.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />

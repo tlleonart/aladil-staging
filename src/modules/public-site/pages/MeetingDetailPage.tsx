@@ -1,4 +1,3 @@
-import type { Prisma } from "@prisma/client";
 import {
   ArrowLeft,
   Building2,
@@ -11,21 +10,16 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import type { FunctionReturnType } from "convex/server";
+import type { api } from "@/../convex/_generated/api";
 
-type MeetingWithRelations = Prisma.MeetingGetPayload<{
-  include: {
-    coverAsset: true;
-    hostLab: { select: { id: true; name: true } };
-    topicsPdfAsset: true;
-    gallery: { include: { asset: true } };
-  };
-}>;
+type MeetingWithRelations = FunctionReturnType<typeof api.meetings.getBySlug>;
 
 interface MeetingDetailPageProps {
   meeting: MeetingWithRelations;
 }
 
-const formatDate = (date: Date): string => {
+const formatDate = (date: string | Date): string => {
   return new Intl.DateTimeFormat("es-ES", {
     day: "numeric",
     month: "long",
@@ -33,7 +27,10 @@ const formatDate = (date: Date): string => {
   }).format(new Date(date));
 };
 
-const formatDateRange = (startDate: Date, endDate?: Date | null): string => {
+const formatDateRange = (
+  startDate: string | Date,
+  endDate?: string | Date | null,
+): string => {
   const start = new Date(startDate);
   if (!endDate) {
     return formatDate(start);
@@ -54,8 +51,6 @@ const formatDateRange = (startDate: Date, endDate?: Date | null): string => {
 };
 
 export const MeetingDetailPage = ({ meeting }: MeetingDetailPageProps) => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
   return (
     <div className="bg-white">
       {/* Hero Section with Cover Image */}
@@ -64,7 +59,7 @@ export const MeetingDetailPage = ({ meeting }: MeetingDetailPageProps) => {
         {meeting.coverAsset && (
           <div className="absolute inset-0 h-[400px] md:h-[500px]">
             <img
-              src={`${supabaseUrl}/storage/v1/object/public/${meeting.coverAsset.bucket}/${meeting.coverAsset.path}`}
+              src={meeting.coverAsset.url ?? ""}
               alt={meeting.title}
               className="w-full h-full object-cover"
             />
@@ -164,9 +159,9 @@ export const MeetingDetailPage = ({ meeting }: MeetingDetailPageProps) => {
                         key={item.id}
                         className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden"
                       >
-                        {item.asset?.path ? (
+                        {item.asset?.url ? (
                           <img
-                            src={`${supabaseUrl}/storage/v1/object/public/${item.asset.bucket}/${item.asset.path}`}
+                            src={item.asset.url}
                             alt={item.asset.filename || "Gallery image"}
                             className="w-full h-full object-cover"
                           />
@@ -286,7 +281,7 @@ export const MeetingDetailPage = ({ meeting }: MeetingDetailPageProps) => {
                   {meeting.topicsPdfAsset && (
                     <div className="pt-4">
                       <a
-                        href={`${supabaseUrl}/storage/v1/object/public/${meeting.topicsPdfAsset.bucket}/${meeting.topicsPdfAsset.path}`}
+                        href={meeting.topicsPdfAsset.url ?? ""}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"

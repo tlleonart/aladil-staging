@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { prisma } from "@/modules/core/db";
+import { api } from "@/../convex/_generated/api";
+import { createAnonymousConvexClient } from "@/modules/core/convex/server";
 
 export const dynamic = "force-dynamic";
 
@@ -11,22 +12,15 @@ export const metadata: Metadata = {
 };
 
 export default async function NextMeetingPage() {
-  const today = new Date();
-
-  // Find the next upcoming meeting (closest future date)
-  const nextMeeting = await prisma.meeting.findFirst({
-    where: {
-      status: "PUBLISHED",
-      startDate: { gte: today },
-    },
-    orderBy: { startDate: "asc" },
-    select: { slug: true },
+  const convex = createAnonymousConvexClient();
+  const meetings = await convex.query(api.meetings.listPublished, {
+    limit: 500,
   });
+  const today = Date.now();
+  const next = meetings
+    .filter((m) => Date.parse(m.startDate) >= today)
+    .sort((a, b) => Date.parse(a.startDate) - Date.parse(b.startDate))[0];
 
-  if (nextMeeting) {
-    redirect(`/meetings/${nextMeeting.slug}`);
-  }
-
-  // If no future meeting, redirect to meetings list
+  if (next) redirect(`/meetings/${next.slug}`);
   redirect("/meetings");
 }

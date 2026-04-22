@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { orpc } from "@/modules/core/orpc/client";
 import { useMutation } from "@/modules/core/orpc/react";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-
 interface AssetUploaderProps {
   value?: string | null;
   onChange: (assetId: string | null) => void;
@@ -18,9 +16,10 @@ interface AssetUploaderProps {
   description?: string;
   currentAsset?: {
     id: string;
-    bucket: string;
-    path: string;
+    bucket?: string;
+    path?: string;
     filename: string;
+    url?: string | null;
   } | null;
 }
 
@@ -42,10 +41,8 @@ export function AssetUploader({
     mutationFn: (id: string) => orpc.assets.remove({ id }),
   });
 
-  // Build preview URL from current asset
-  const currentPreviewUrl = currentAsset
-    ? `${supabaseUrl}/storage/v1/object/public/${currentAsset.bucket}/${currentAsset.path}`
-    : null;
+  // Build preview URL from current asset (Convex-resolved URL)
+  const currentPreviewUrl = currentAsset?.url ?? null;
 
   const handleFileChange = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {

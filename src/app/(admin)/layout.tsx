@@ -1,7 +1,5 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { AdminShell } from "@/modules/admin/components";
-import { auth } from "@/modules/core/auth/auth";
+import { requireServerUser } from "@/modules/core/auth/server";
 import { QueryProvider } from "@/modules/core/orpc";
 
 export default async function AdminLayout({
@@ -9,23 +7,14 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    redirect("/login");
-  }
-
-  const user = {
-    id: session.user.id,
-    name: session.user.name || "",
-    email: session.user.email,
-  };
-
+  const user = await requireServerUser();
   return (
     <QueryProvider>
-      <AdminShell user={user}>{children}</AdminShell>
+      <AdminShell
+        user={{ id: user.id, name: user.name, email: user.email }}
+      >
+        {children}
+      </AdminShell>
     </QueryProvider>
   );
 }

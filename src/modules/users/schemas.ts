@@ -1,7 +1,7 @@
 import * as z from "zod";
 
 export const UserSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   email: z.string().email(),
   name: z.string(),
   isActive: z.boolean(),
@@ -41,7 +41,7 @@ export const UpdateUserSchema = z.object({
 export const ListUsersQuerySchema = z.object({
   isActive: z.boolean().optional(),
   limit: z.number().int().min(1).max(100).default(50),
-  cursor: z.string().uuid().optional(),
+  cursor: z.string().min(1).optional(),
 });
 
 export const UpdateProfileSchema = z.object({

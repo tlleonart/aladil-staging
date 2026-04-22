@@ -23,57 +23,28 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { prisma } from "@/modules/core/db";
+import { api } from "@/../convex/_generated/api";
+import { createAnonymousConvexClient } from "@/modules/core/convex/server";
 import { ContactSection } from "../components/ContactSection";
 import { HeroCarousel } from "../components/HeroCarousel";
 import { PartnersSection } from "../components/PartnersSection";
 
-// Fetch data for the home page
 async function getHomePageData() {
   try {
-    const [meetings, news, executiveMembers, laboratories] = await Promise.all([
-      // Get latest 3 published meetings
-      prisma.meeting.findMany({
-        where: { status: "PUBLISHED" },
-        orderBy: { startDate: "desc" },
-        take: 3,
-        include: {
-          coverAsset: true,
-        },
-      }),
-      // Get latest 3 published news posts
-      prisma.newsPost.findMany({
-        where: { status: "PUBLISHED" },
-        orderBy: { publishedAt: "desc" },
-        take: 3,
-        include: {
-          coverAsset: true,
-        },
-      }),
-      // Get first 4 active executive members
-      prisma.executiveMember.findMany({
-        where: { isActive: true },
-        orderBy: [{ sortOrder: "asc" }, { fullName: "asc" }],
-        take: 4,
-        include: {
-          lab: { select: { id: true, name: true } },
-          photoAsset: true,
-        },
-      }),
-      // Get all active labs for the map (exclude internal ALADIL lab)
-      prisma.lab.findMany({
-        where: {
-          isActive: true,
-          id: { not: "00000000-0000-0000-0000-000000000001" },
-        },
-        orderBy: { sortOrder: "asc" },
-        include: {
-          logoAsset: true,
-        },
-      }),
-    ]);
-
-    return { meetings, news, executiveMembers, laboratories };
+    const convex = createAnonymousConvexClient();
+    const [meetingsAll, newsAll, executiveMembersAll, laboratoriesAll] =
+      await Promise.all([
+        convex.query(api.meetings.listPublished, { limit: 3 }),
+        convex.query(api.news.listPublished, { limit: 3 }),
+        convex.query(api.executive.listPublic, { limit: 4 }),
+        convex.query(api.labs.publicList, { limit: 500 }),
+      ]);
+    return {
+      meetings: meetingsAll,
+      news: newsAll,
+      executiveMembers: executiveMembersAll,
+      laboratories: laboratoriesAll,
+    };
   } catch (error) {
     console.error("Error fetching homepage data:", error);
     return { meetings: [], news: [], executiveMembers: [], laboratories: [] };
@@ -313,7 +284,7 @@ const MeetingsSection = ({ meetings }: MeetingsSectionProps) => (
                 <div className="aspect-video bg-gray-100 rounded-t-xl overflow-hidden">
                   {meeting.coverAsset ? (
                     <img
-                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${meeting.coverAsset.bucket}/${meeting.coverAsset.path}`}
+                      src={`${meeting.coverAsset.url ?? ""}`}
                       alt={meeting.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -404,7 +375,7 @@ const ExecutiveSection = ({ members }: ExecutiveSectionProps) => (
                 <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden bg-gray-100">
                   {member.photoAsset ? (
                     <img
-                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${member.photoAsset.bucket}/${member.photoAsset.path}`}
+                      src={`${member.photoAsset.url ?? ""}`}
                       alt={member.fullName}
                       className="w-full h-full object-cover"
                     />
@@ -476,7 +447,7 @@ const NewsSection = ({ news }: NewsSectionProps) => (
                 <div className="aspect-video bg-gray-100 rounded-t-xl overflow-hidden">
                   {post.coverAsset ? (
                     <img
-                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${post.coverAsset.bucket}/${post.coverAsset.path}`}
+                      src={`${post.coverAsset.url ?? ""}`}
                       alt={post.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />

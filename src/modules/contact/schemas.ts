@@ -1,7 +1,7 @@
 import * as z from "zod";
 
 export const ContactMessageSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   name: z.string(),
   email: z.string().email(),
   message: z.string(),
@@ -12,7 +12,7 @@ export const ContactMessageSchema = z.object({
 export const ListContactQuerySchema = z.object({
   status: z.enum(["NEW", "READ", "ARCHIVED"]).optional(),
   limit: z.number().int().min(1).max(100).default(50),
-  cursor: z.string().uuid().optional(),
+  cursor: z.string().min(1).optional(),
 });
 
 export const CreateContactInputSchema = z.object({

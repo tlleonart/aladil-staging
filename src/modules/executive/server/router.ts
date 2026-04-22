@@ -1,8 +1,8 @@
 import * as z from "zod";
-import { hasPermission } from "@/modules/core/auth/rbac";
-import { prisma } from "@/modules/core/db";
+import { api } from "@/../convex/_generated/api";
+import type { Id } from "@/../convex/_generated/dataModel";
+import { fromConvex } from "@/modules/core/orpc/errors";
 import {
-  ORPCError,
   protectedProcedure,
   publicProcedure,
 } from "@/modules/core/orpc/server";
@@ -12,184 +12,108 @@ import {
   UpdateExecutiveMemberSchema,
 } from "../schemas";
 
-// Permission check middleware
-const withPermission = (permission: string) =>
-  protectedProcedure.use(async ({ context, next }) => {
-    const allowed = await hasPermission(
-      context.user.id,
-      "EXEC_COMMITTEE",
-      permission,
-    );
-    if (!allowed) {
-      throw new ORPCError("FORBIDDEN", {
-        message: `Permission denied: ${permission}`,
-      });
-    }
-    return next({ context });
-  });
+const coerceAssetId = (v: string | null | undefined) =>
+  v ? (v as Id<"assets">) : null;
+const coerceLabId = (v: string | null | undefined) =>
+  v ? (v as Id<"labs">) : null;
 
-// List executive members
-export const list = withPermission("executive.read")
+export const list = protectedProcedure
   .input(ListExecutiveQuerySchema)
-  .handler(async ({ input }) => {
-    const { isActive, countryCode, limit, cursor } = input;
+  .handler(async ({ input, context }) =>
+    fromConvex(() => context.convex.query(api.executive.list, input)),
+  );
 
-    const members = await prisma.executiveMember.findMany({
-      where: {
-        ...(isActive !== undefined && { isActive }),
-        ...(countryCode && { countryCode }),
-        ...(cursor && { id: { lt: cursor } }),
-      },
-      orderBy: [{ sortOrder: "asc" }, { fullName: "asc" }],
-      take: limit,
-      include: {
-        lab: { select: { id: true, name: true } },
-        photoAsset: true,
-      },
-    });
+export const getById = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.query(api.executive.getById, {
+        id: input.id as Id<"executiveMembers">,
+      }),
+    ),
+  );
 
-    return members;
-  });
-
-// Get single executive member by ID
-export const getById = withPermission("executive.read")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const member = await prisma.executiveMember.findUnique({
-      where: { id: input.id },
-      include: {
-        lab: { select: { id: true, name: true } },
-        photoAsset: true,
-        flagAsset: true,
-      },
-    });
-
-    if (!member) {
-      throw new ORPCError("NOT_FOUND", {
-        message: "Executive member not found",
-      });
-    }
-
-    return member;
-  });
-
-// Create executive member
-export const create = withPermission("executive.create")
+export const create = protectedProcedure
   .input(CreateExecutiveMemberSchema)
-  .handler(async ({ input }) => {
-    const member = await prisma.executiveMember.create({
-      data: {
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.executive.create, {
         fullName: input.fullName,
         position: input.position,
         countryCode: input.countryCode,
         sortOrder: input.sortOrder,
         isActive: input.isActive,
-        labId: input.labId,
-        photoAssetId: input.photoAssetId,
-        flagAssetId: input.flagAssetId,
-      },
-    });
+        labId: coerceLabId(input.labId),
+        photoAssetId: coerceAssetId(input.photoAssetId),
+        flagAssetId: coerceAssetId(input.flagAssetId),
+      }),
+    ),
+  );
 
-    return member;
-  });
-
-// Update executive member
-export const update = withPermission("executive.update")
+export const update = protectedProcedure
   .input(
     z.object({
-      id: z.string().uuid(),
+      id: z.string().min(1),
       data: UpdateExecutiveMemberSchema,
     }),
   )
-  .handler(async ({ input }) => {
-    const existing = await prisma.executiveMember.findUnique({
-      where: { id: input.id },
-    });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", {
-        message: "Executive member not found",
-      });
-    }
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.executive.update, {
+        id: input.id as Id<"executiveMembers">,
+        data: {
+          fullName: input.data.fullName,
+          position: input.data.position,
+          countryCode: input.data.countryCode,
+          sortOrder: input.data.sortOrder,
+          isActive: input.data.isActive,
+          labId:
+            input.data.labId === undefined
+              ? undefined
+              : coerceLabId(input.data.labId),
+          photoAssetId:
+            input.data.photoAssetId === undefined
+              ? undefined
+              : coerceAssetId(input.data.photoAssetId),
+          flagAssetId:
+            input.data.flagAssetId === undefined
+              ? undefined
+              : coerceAssetId(input.data.flagAssetId),
+        },
+      }),
+    ),
+  );
 
-    const member = await prisma.executiveMember.update({
-      where: { id: input.id },
-      data: input.data,
-    });
+export const remove = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.executive.remove, {
+        id: input.id as Id<"executiveMembers">,
+      }),
+    ),
+  );
 
-    return member;
-  });
+export const toggleActive = protectedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) =>
+    fromConvex(() =>
+      context.convex.mutation(api.executive.toggleActive, {
+        id: input.id as Id<"executiveMembers">,
+      }),
+    ),
+  );
 
-// Delete executive member
-export const remove = withPermission("executive.delete")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const existing = await prisma.executiveMember.findUnique({
-      where: { id: input.id },
-    });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", {
-        message: "Executive member not found",
-      });
-    }
-
-    await prisma.executiveMember.delete({ where: { id: input.id } });
-    return { success: true };
-  });
-
-// Toggle active status
-export const toggleActive = withPermission("executive.update")
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const existing = await prisma.executiveMember.findUnique({
-      where: { id: input.id },
-    });
-    if (!existing) {
-      throw new ORPCError("NOT_FOUND", {
-        message: "Executive member not found",
-      });
-    }
-
-    const member = await prisma.executiveMember.update({
-      where: { id: input.id },
-      data: { isActive: !existing.isActive },
-    });
-
-    return member;
-  });
-
-// ==========================================
-// PUBLIC PROCEDURES (no auth required)
-// ==========================================
-
-// List active executive members (public)
 export const listPublic = publicProcedure
   .input(
-    z.object({
-      limit: z.number().int().min(1).max(100).default(50),
-    }),
+    z.object({ limit: z.number().int().min(1).max(100).default(50) }),
   )
-  .handler(async ({ input }) => {
-    const { limit } = input;
-
-    const members = await prisma.executiveMember.findMany({
-      where: {
-        isActive: true,
-      },
-      orderBy: [{ sortOrder: "asc" }, { fullName: "asc" }],
-      take: limit,
-      include: {
-        lab: { select: { id: true, name: true } },
-        photoAsset: true,
-      },
-    });
-
-    return members;
-  });
+  .handler(async ({ input, context }) =>
+    fromConvex(() => context.convex.query(api.executive.listPublic, input)),
+  );
 
 export const executiveRouter = {
-  // Public procedures
   listPublic,
-  // Protected procedures
   list,
   getById,
   create,

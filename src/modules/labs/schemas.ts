@@ -1,14 +1,14 @@
 import * as z from "zod";
 
 export const LabSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   name: z.string(),
   countryCode: z.string(),
   city: z.string().nullable(),
   websiteUrl: z.string().nullable(),
   isActive: z.boolean(),
   sortOrder: z.number(),
-  logoAssetId: z.string().uuid().nullable(),
+  logoAssetId: z.string().min(1).nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -20,7 +20,7 @@ export const CreateLabSchema = z.object({
   websiteUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
   isActive: z.boolean(),
   sortOrder: z.number().int(),
-  logoAssetId: z.string().uuid().optional(),
+  logoAssetId: z.string().min(1).optional(),
 });
 
 export const UpdateLabSchema = CreateLabSchema.partial();
@@ -29,7 +29,7 @@ export const ListLabsQuerySchema = z.object({
   isActive: z.boolean().optional(),
   countryCode: z.string().optional(),
   limit: z.number().int().min(1).max(100).default(50),
-  cursor: z.string().uuid().optional(),
+  cursor: z.string().min(1).optional(),
 });
 
 export type Lab = z.infer<typeof LabSchema>;

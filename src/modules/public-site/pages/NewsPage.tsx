@@ -7,20 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { prisma } from "@/modules/core/db";
+import { api } from "@/../convex/_generated/api";
+import { createAnonymousConvexClient } from "@/modules/core/convex/server";
 
-// Fetch published news
 async function getNews() {
-  const news = await prisma.newsPost.findMany({
-    where: { status: "PUBLISHED" },
-    orderBy: { publishedAt: "desc" },
-    take: 50,
-    include: {
-      coverAsset: true,
-    },
-  });
-
-  return news;
+  const convex = createAnonymousConvexClient();
+  return await convex.query(api.news.listPublished, { limit: 50 });
 }
 
 export const NewsPage = async () => {
@@ -78,7 +70,7 @@ export const NewsPage = async () => {
                     <div className="aspect-video bg-gray-100 rounded-t-xl overflow-hidden">
                       {post.coverAsset ? (
                         <img
-                          src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${post.coverAsset.bucket}/${post.coverAsset.path}`}
+                          src={`${post.coverAsset.url ?? ""}`}
                           alt={post.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />

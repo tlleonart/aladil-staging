@@ -26,7 +26,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
           </svg>
         </div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Ocurrió un error inesperado
+          Ocurrió un error inesperado.
         </h1>
         <p className="mt-3 text-gray-600">
           Lo sentimos, algo salió mal. Por favor intenta nuevamente.

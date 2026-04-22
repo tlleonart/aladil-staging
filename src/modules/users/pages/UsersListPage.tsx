@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/modules/core/auth/auth-client";
+// (migrated to Convex Auth; hook signature matches previous Better-Auth usage)
 import { orpc } from "@/modules/core/orpc/client";
 import {
   useMutation,

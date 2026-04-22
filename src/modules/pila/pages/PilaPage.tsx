@@ -31,8 +31,6 @@ import { ConfirmDialog } from "@/modules/shared/ui";
 import { PilaStatusBadge } from "../components";
 import { downloadBlob, exportPilaPdf } from "../lib/export-pdf";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-
 const MONTHS = [
   "Enero",
   "Febrero",
@@ -129,7 +127,7 @@ function PublishedReports() {
               </div>
               <Button asChild variant="outline" size="sm">
                 <a
-                  href={`${supabaseUrl}/storage/v1/object/public/assets/${report.storagePath}`}
+                  href={report.url ?? ""}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

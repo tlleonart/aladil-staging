@@ -27,13 +27,14 @@ interface Lab {
   id: string;
   name: string;
   countryCode: string;
-  city: string | null;
-  websiteUrl: string | null;
+  city?: string | null;
+  websiteUrl?: string | null;
   coordinates: { lat: number; lng: number };
   countryName: string;
   logoAsset: {
-    bucket: string;
-    path: string;
+    bucket?: string;
+    path?: string;
+    url?: string | null;
   } | null;
 }
 
@@ -107,7 +108,7 @@ export default function PartnersMap({
               {lab.logoAsset && (
                 <div className="w-16 h-16 flex items-center justify-center bg-white rounded-md p-1 mb-2 border">
                   <img
-                    src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${lab.logoAsset.bucket}/${lab.logoAsset.path}`}
+                    src={`${lab.logoAsset.url ?? ""}`}
                     alt={lab.name}
                     className="object-contain max-w-full max-h-full"
                   />

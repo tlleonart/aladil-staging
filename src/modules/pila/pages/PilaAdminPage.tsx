@@ -30,8 +30,6 @@ import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
 import { ConfirmDialog } from "@/modules/shared/ui";
 import { PilaStatusBadge } from "../components";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-
 const MONTHS = [
   "Enero",
   "Febrero",
@@ -115,7 +113,7 @@ function PublishedReportsAdmin() {
                 <div className="flex items-center gap-2">
                   <Button asChild variant="outline" size="sm">
                     <a
-                      href={`${supabaseUrl}/storage/v1/object/public/assets/${report.storagePath}`}
+                      href={report.url ?? ""}
                       target="_blank"
                       rel="noopener noreferrer"
                     >

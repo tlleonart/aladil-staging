@@ -1,14 +1,14 @@
 import * as z from "zod";
 
 export const NewsPostSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   title: z.string().min(1).max(255),
   slug: z.string().min(1).max(255),
   excerpt: z.string().nullable(),
   content: z.any().nullable(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
-  coverAssetId: z.string().uuid().nullable(),
-  authorId: z.string().uuid().nullable(),
+  coverAssetId: z.string().min(1).nullable(),
+  authorId: z.string().min(1).nullable(),
   publishedAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -20,7 +20,7 @@ export const CreateNewsPostSchema = z.object({
   excerpt: z.string().max(500).optional(),
   content: z.any().optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
-  coverAssetId: z.string().uuid().optional(),
+  coverAssetId: z.string().min(1).optional(),
   publishedAt: z.string().optional(),
   authorName: z.string().max(255).optional(),
 });
@@ -30,7 +30,7 @@ export const UpdateNewsPostSchema = CreateNewsPostSchema.partial();
 export const ListNewsQuerySchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
   limit: z.number().int().min(1).max(100).default(20),
-  cursor: z.string().uuid().optional(),
+  cursor: z.string().min(1).optional(),
 });
 
 export type NewsPost = z.infer<typeof NewsPostSchema>;

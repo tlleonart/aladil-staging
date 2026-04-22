@@ -1,72 +1,60 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { auth } from "@/modules/core/auth/auth";
-import { prisma } from "@/modules/core/db";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
-
-const BUCKET = "assets";
+import { api } from "@/../convex/_generated/api";
+import type { Id } from "@/../convex/_generated/dataModel";
+import { createConvexClient } from "@/modules/core/convex/server";
 
 export async function POST(request: Request) {
-  // Verify auth
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
-  if (!session?.user) {
+  const convex = await createConvexClient();
+
+  // Verify auth by asking Convex who the current user is.
+  const me = await convex.query(api.users.me, {});
+  if (!me) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
-
   if (!file) {
     return NextResponse.json({ error: "Archivo requerido" }, { status: 400 });
   }
 
-  // Generate storage path
-  const timestamp = Date.now();
-  const sanitizedName = file.name.toLowerCase().replace(/[^a-z0-9.]/g, "-");
-  const storagePath = `editor/${timestamp}-${sanitizedName}`;
+  // 1) Ask Convex for a signed upload URL
+  const uploadUrl = await convex.mutation(api.storage.generateUploadUrl, {});
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-
-  // Upload to Supabase Storage with service role (bypasses RLS)
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from(BUCKET)
-    .upload(storagePath, buffer, {
-      contentType: file.type,
-      upsert: false,
-    });
-
-  if (uploadError) {
+  // 2) Stream the file directly to Convex Storage
+  const putRes = await fetch(uploadUrl, {
+    method: "POST",
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+    body: await file.arrayBuffer(),
+  });
+  if (!putRes.ok) {
+    const body = await putRes.text().catch(() => "");
     return NextResponse.json(
-      { error: `Error al subir: ${uploadError.message}` },
+      { error: `Upload failed: ${putRes.status} ${body}` },
       { status: 500 },
     );
   }
+  const { storageId } = (await putRes.json()) as {
+    storageId: Id<"_storage">;
+  };
 
-  // Create asset record
-  const asset = await prisma.asset.create({
-    data: {
-      type: "IMAGE",
-      bucket: BUCKET,
-      path: storagePath,
-      filename: file.name,
-      mimeType: file.type,
-      sizeBytes: file.size,
-      uploadedById: session.user.id,
-    },
+  // 3) Create the Asset row and return URL
+  const type = file.type.startsWith("image/")
+    ? "IMAGE"
+    : file.type === "application/pdf"
+      ? "PDF"
+      : "OTHER";
+  const asset = await convex.mutation(api.assets.create, {
+    type,
+    storageId,
+    filename: file.name,
+    mimeType: file.type || undefined,
+    size: file.size,
   });
 
-  const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${storagePath}`;
-
   return NextResponse.json({
-    url: publicUrl,
-    assetId: asset.id,
-    bucket: BUCKET,
-    path: storagePath,
+    url: asset?.url ?? null,
+    assetId: asset?.id ?? null,
+    storageId,
   });
 }

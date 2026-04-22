@@ -76,12 +76,14 @@ export function PilaReportEditPage({ id }: PilaReportEditPageProps) {
   const monthName = MONTHS[report.month - 1];
 
   // Map report values for the form
-  const defaultValues = report.values.map((v) => ({
-    indicatorId: v.indicatorId,
-    numerator: v.numerator,
-    denominator: v.denominator,
-    doesNotReport: v.doesNotReport ?? false,
-  }));
+  const defaultValues = (report.values ?? [])
+    .filter((v) => v.indicator)
+    .map((v) => ({
+      indicatorId: v.indicator!.id,
+      numerator: v.numerator,
+      denominator: v.denominator,
+      doesNotReport: v.doesNotReport ?? false,
+    }));
 
   return (
     <div className="space-y-6">
