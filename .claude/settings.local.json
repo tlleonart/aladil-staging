@@ -100,7 +100,16 @@
       "Bash(find /c/Users/tomas/Documents/c14/repos/aladil/src -type f \\\\\\( -name \"*profile*\" -o -name \"*account*\" \\\\\\) 2>/dev/null | head -20)",
       "Bash(ls \"C:/Users/tomas/Documents/c14/repos/aladil/src/app/\\(admin\\)/admin/\")",
       "Bash(node test-screenshots/test-pila-publish.mjs)",
-      "Bash(node test-screenshots/test-pila-scroll.mjs)"
+      "Bash(node test-screenshots/test-pila-scroll.mjs)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_fill_form",
+      "mcp__plugin_engram_engram__engram_briefing",
+      "Bash(wc -l src/modules/*/server/router.ts src/modules/*/server/routes.ts)",
+      "Bash(pnpm db:seed-pila:*)",
+      "mcp__plugin_engram_engram__engram_remember",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d,indent=2\\)[:500]\\)\")",
+      "Bash(pnpm db:demo *)",
+      "mcp__vercel__get_runtime_logs"
     ]
   }
 }
