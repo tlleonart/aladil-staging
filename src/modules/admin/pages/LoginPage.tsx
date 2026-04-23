@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -10,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { useAuthActions } from "@convex-dev/auth/react";
 
 export const LoginPage = () => {
-  const router = useRouter();
   const { signIn } = useAuthActions();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,8 +22,10 @@ export const LoginPage = () => {
 
     try {
       await signIn("password", { email, password, flow: "signIn" });
-      router.push("/admin");
-      router.refresh();
+      // Full navigation so the freshly-set auth cookie actually travels with
+      // the /admin request. router.push + refresh sometimes hits the middleware
+      // before the Set-Cookie has landed in document.cookie.
+      window.location.assign("/admin");
     } catch (err) {
       const msg = err instanceof Error ? err.message.toLowerCase() : "";
       if (

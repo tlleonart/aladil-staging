@@ -2,6 +2,7 @@ import { AdminShell } from "@/modules/admin/components";
 import { requireServerUser } from "@/modules/core/auth/server";
 import { QueryProvider } from "@/modules/core/orpc";
 
+// Redirects unauthenticated users to /login (middleware handles /api/auth only).
 export default async function AdminLayout({
   children,
 }: {
