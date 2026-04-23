@@ -7,10 +7,12 @@ import bcrypt from "bcryptjs";
 const CustomPassword = Password({
   crypto: {
     async hashSecret(password: string) {
-      return bcrypt.hash(password, 12);
+      // bcryptjs async variants use setTimeout (unavailable in Convex V8 runtime),
+      // so we use the synchronous variants — they block for ~100–200 ms with cost 12.
+      return bcrypt.hashSync(password, 12);
     },
     async verifySecret(password: string, hash: string) {
-      return bcrypt.compare(password, hash);
+      return bcrypt.compareSync(password, hash);
     },
   },
   profile(params) {

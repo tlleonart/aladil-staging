@@ -137,7 +137,7 @@ export const create = mutation({
       .withIndex("email", (q) => q.eq("email", args.email))
       .unique();
     if (existing) throw new Error("Email already exists");
-    const hash = await bcrypt.hash(args.password, 12);
+    const hash = bcrypt.hashSync(args.password, 12);
     const userId = await ctx.db.insert("users", {
       email: args.email,
       name: args.name,
@@ -192,7 +192,7 @@ export const update = mutation({
     if (data.labId !== undefined) patch.labId = data.labId ?? undefined;
     await ctx.db.patch(id, patch);
     if (data.password) {
-      const hash = await bcrypt.hash(data.password, 12);
+      const hash = bcrypt.hashSync(data.password, 12);
       const acc = await ctx.db
         .query("authAccounts")
         .withIndex("userIdAndProvider", (q) =>
@@ -358,9 +358,9 @@ export const changePassword = mutation({
     if (!acc?.secret) {
       throw new Error("No se encontró una cuenta con contraseña");
     }
-    const ok = await bcrypt.compare(currentPassword, acc.secret);
+    const ok = bcrypt.compareSync(currentPassword, acc.secret);
     if (!ok) throw new Error("La contraseña actual es incorrecta");
-    const hashed = await bcrypt.hash(newPassword, 12);
+    const hashed = bcrypt.hashSync(newPassword, 12);
     await ctx.db.patch(acc._id, { secret: hashed });
     return { success: true };
   },
