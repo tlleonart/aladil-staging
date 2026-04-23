@@ -7,6 +7,7 @@ import {
   CreatePilaIndicatorSchema,
   CreatePilaReportSchema,
   ListPilaReportsQuerySchema,
+  MyLabReportQuerySchema,
   PilaReportQuerySchema,
   UpdatePilaIndicatorSchema,
   UpdatePilaReportSchema,
@@ -24,15 +25,11 @@ const listIndicators = protectedProcedure.handler(async ({ context }) =>
 const createIndicator = protectedProcedure
   .input(CreatePilaIndicatorSchema)
   .handler(async ({ input, context }) =>
-    fromConvex(() =>
-      context.convex.mutation(api.pila.createIndicator, input),
-    ),
+    fromConvex(() => context.convex.mutation(api.pila.createIndicator, input)),
   );
 
 const updateIndicator = protectedProcedure
-  .input(
-    z.object({ id: z.string().min(1), data: UpdatePilaIndicatorSchema }),
-  )
+  .input(z.object({ id: z.string().min(1), data: UpdatePilaIndicatorSchema }))
   .handler(async ({ input, context }) =>
     fromConvex(() =>
       context.convex.mutation(api.pila.updateIndicator, {
@@ -176,9 +173,7 @@ const listAll = protectedProcedure
         year: input.year,
         month: input.month,
         status: input.status,
-        labId: input.labId
-          ? (input.labId as Id<"labs">)
-          : undefined,
+        labId: input.labId ? (input.labId as Id<"labs">) : undefined,
       }),
     ),
   );
@@ -222,11 +217,15 @@ const generateReport = protectedProcedure
         monthFrom: input.monthFrom,
         yearTo: input.yearTo,
         monthTo: input.monthTo,
-        labId: input.labId
-          ? (input.labId as Id<"labs">)
-          : undefined,
+        labId: input.labId ? (input.labId as Id<"labs">) : undefined,
       }),
     ),
+  );
+
+const generateMyLabReport = protectedProcedure
+  .input(MyLabReportQuerySchema)
+  .handler(async ({ input, context }) =>
+    fromConvex(() => context.convex.query(api.pila.generateMyLabReport, input)),
   );
 
 // ── Published ────────────────────────────────────────────────────
@@ -286,6 +285,7 @@ export const pilaRouter = {
   reopen,
   markReviewed,
   generateReport,
+  generateMyLabReport,
   publishReport,
   listPublished,
   unpublishReport,

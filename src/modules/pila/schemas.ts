@@ -72,6 +72,13 @@ export const PilaReportQuerySchema = z.object({
   labId: z.string().min(1).optional(),
 });
 
+export const MyLabReportQuerySchema = z.object({
+  yearFrom: z.number().int().min(2020).max(2100),
+  monthFrom: z.number().int().min(1).max(12),
+  yearTo: z.number().int().min(2020).max(2100),
+  monthTo: z.number().int().min(1).max(12),
+});
+
 // ── Types ─────────────────────────────────────────────────────────
 
 export type PilaIndicator = z.infer<typeof PilaIndicatorSchema>;
@@ -81,3 +88,4 @@ export type ReportValueInput = z.infer<typeof ReportValueInputSchema>;
 export type CreatePilaReport = z.infer<typeof CreatePilaReportSchema>;
 export type UpdatePilaReport = z.infer<typeof UpdatePilaReportSchema>;
 export type PilaReportQuery = z.infer<typeof PilaReportQuerySchema>;
+export type MyLabReportQuery = z.infer<typeof MyLabReportQuerySchema>;

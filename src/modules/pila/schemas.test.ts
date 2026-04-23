@@ -3,6 +3,7 @@ import {
   CreatePilaIndicatorSchema,
   CreatePilaReportSchema,
   ListPilaReportsQuerySchema,
+  MyLabReportQuerySchema,
   PilaIndicatorSchema,
   PilaReportQuerySchema,
   ReportValueInputSchema,
@@ -669,6 +670,92 @@ describe("PilaReportQuerySchema", () => {
       monthFrom: 6,
       yearTo: 2026,
       monthTo: 12,
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+// ── MyLabReportQuerySchema ───────────────────────────────────────
+
+describe("MyLabReportQuerySchema", () => {
+  const validQuery = {
+    yearFrom: 2026,
+    monthFrom: 1,
+    yearTo: 2026,
+    monthTo: 3,
+  };
+
+  it("should validate a complete query", () => {
+    const result = MyLabReportQuerySchema.safeParse(validQuery);
+    expect(result.success).toBe(true);
+  });
+
+  it("should reject labId (my-lab endpoint is auto-scoped)", () => {
+    const result = MyLabReportQuerySchema.safeParse({
+      ...validQuery,
+      labId: "550e8400-e29b-41d4-a716-446655440000",
+    });
+    // labId is not in schema → strip mode keeps it out of parsed data
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).not.toHaveProperty("labId");
+    }
+  });
+
+  it("should require yearFrom", () => {
+    const { yearFrom: _yearFrom, ...rest } = validQuery;
+    const result = MyLabReportQuerySchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+
+  it("should require monthFrom", () => {
+    const { monthFrom: _monthFrom, ...rest } = validQuery;
+    const result = MyLabReportQuerySchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+
+  it("should require yearTo", () => {
+    const { yearTo: _yearTo, ...rest } = validQuery;
+    const result = MyLabReportQuerySchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+
+  it("should require monthTo", () => {
+    const { monthTo: _monthTo, ...rest } = validQuery;
+    const result = MyLabReportQuerySchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+
+  it("should reject monthFrom below 1", () => {
+    const result = MyLabReportQuerySchema.safeParse({
+      ...validQuery,
+      monthFrom: 0,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("should reject monthTo above 12", () => {
+    const result = MyLabReportQuerySchema.safeParse({
+      ...validQuery,
+      monthTo: 13,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("should reject yearFrom below 2020", () => {
+    const result = MyLabReportQuerySchema.safeParse({
+      ...validQuery,
+      yearFrom: 2019,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("should accept same month for from and to", () => {
+    const result = MyLabReportQuerySchema.safeParse({
+      yearFrom: 2026,
+      monthFrom: 3,
+      yearTo: 2026,
+      monthTo: 3,
     });
     expect(result.success).toBe(true);
   });

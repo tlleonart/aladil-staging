@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/modules/core/orpc/client";
 import {
   useMutation,
@@ -28,7 +29,11 @@ import {
   useQueryClient,
 } from "@/modules/core/orpc/react";
 import { ConfirmDialog } from "@/modules/shared/ui";
-import { PilaStatusBadge } from "../components";
+import {
+  PilaStatusBadge,
+  ReportTable,
+  type ReportTableData,
+} from "../components";
 import { downloadBlob, exportPilaPdf } from "../lib/export-pdf";
 
 const MONTHS = [
@@ -152,14 +157,12 @@ function AnonymousMonthlyReport() {
   const [csvLoading, setCsvLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Get current user info (lab association for PDF personalization)
   const { data: me } = useQuery({
     queryKey: ["users", "me"],
     queryFn: () => orpc.users.me({}),
     staleTime: 5 * 60 * 1000,
   });
 
-  // Check if integral report is available (all reports REVIEWED)
   const { data: status, isLoading: statusLoading } = useQuery({
     queryKey: ["pila", "integralStatus", year, month],
     queryFn: () => orpc.pila.integralStatus({ year, month }),
@@ -167,7 +170,7 @@ function AnonymousMonthlyReport() {
 
   const available = status?.available ?? false;
 
-  const fetchReportData = async (): Promise<ReportData | null> => {
+  const fetchReportData = async (): Promise<ReportTableData | null> => {
     try {
       const result = await orpc.pila.generateReport({
         yearFrom: year,
@@ -175,7 +178,7 @@ function AnonymousMonthlyReport() {
         yearTo: year,
         monthTo: month,
       });
-      return result as ReportData;
+      return result as ReportTableData;
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Error al descargar el informe",
@@ -198,7 +201,10 @@ function AnonymousMonthlyReport() {
         highlightLabId: me?.labId ?? undefined,
         highlightLabName: me?.labName ?? undefined,
       });
-      if (result) downloadBlob(result.blob, result.filename);
+      if (!result) return;
+      downloadBlob(result.standard.blob, result.standard.filename);
+      await new Promise((r) => setTimeout(r, 150));
+      downloadBlob(result.enriched.blob, result.enriched.filename);
     } catch (err) {
       console.error("Error generating PDF:", err);
       setError("Error al generar el PDF");
@@ -213,8 +219,11 @@ function AnonymousMonthlyReport() {
     try {
       const data = await fetchReportData();
       if (!data || data.reports.length === 0) return;
+      const myLabId = me?.labId ?? null;
+      const hasMine = !!myLabId;
       const headers = [
         "Lab",
+        ...(hasMine ? ["Mi lab"] : []),
         ...data.indicators.flatMap((ind) => [
           `${ind.code} Num`,
           `${ind.code} Den`,
@@ -222,7 +231,11 @@ function AnonymousMonthlyReport() {
         ]),
       ];
       const rows = data.reports.map((report, idx) => {
-        const label = `Lab ${idx + 1}`;
+        const isMine = hasMine && report.lab?.id === myLabId;
+        const label = isMine
+          ? (me?.labName ?? `Lab ${idx + 1}`)
+          : `Lab ${idx + 1}`;
+        const mineCol = hasMine ? [isMine ? "Sí" : ""] : [];
         const values = data.indicators.flatMap((ind) => {
           const val = report.values.find((v) => v.indicator.id === ind.id);
           const num = val?.numerator;
@@ -233,7 +246,7 @@ function AnonymousMonthlyReport() {
               : "";
           return [num?.toString() ?? "", den?.toString() ?? "", pct];
         });
-        return [label, ...values];
+        return [label, ...mineCol, ...values];
       });
       const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -258,8 +271,10 @@ function AnonymousMonthlyReport() {
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
           Informe mensual con los indicadores de todos los laboratorios. Los
-          nombres de los laboratorios no se muestran. Disponible una vez que
-          todos los reportes del mes hayan sido revisados por el administrador.
+          nombres de los laboratorios no se muestran (excepto el tuyo, que
+          aparece resaltado). Disponible una vez que todos los reportes del mes
+          hayan sido revisados por el administrador. Al descargar se generan dos
+          PDFs: uno estándar y otro enriquecido con estadísticas adicionales.
         </p>
 
         <div className="flex items-end gap-4">
@@ -321,7 +336,7 @@ function AnonymousMonthlyReport() {
               ) : (
                 <FileDown className="mr-2 h-4 w-4" />
               )}
-              {pdfLoading ? "Descargando..." : "Descargar Informe"}
+              {pdfLoading ? "Descargando..." : "Descargar PDFs"}
             </Button>
           </div>
         </div>
@@ -346,36 +361,158 @@ function AnonymousMonthlyReport() {
   );
 }
 
-// ── Type for anonymous report data ───────────────────────────────
+// ── My Lab Custom Range Report (reporter-only) ───────────────────
 
-interface ReportData {
-  reports: Array<{
-    id: string;
-    year: number;
-    month: number;
-    lab?: { id: string; name: string; countryCode: string } | null;
-    values: Array<{
-      numerator: number | null;
-      denominator: number | null;
-      indicator: {
-        id: string;
-        code: string;
-        name: string;
-        formula: string;
-        sortOrder?: number;
-      };
-    }>;
-  }>;
-  indicators: Array<{
-    id: string;
-    code: string;
-    name: string;
-    formula: string;
-    numeratorLabel: string;
-    denominatorLabel: string;
-    considerations?: string | null;
-    exclusions?: string | null;
-  }>;
+function MyLabCustomRangeReport() {
+  const [yearFrom, setYearFrom] = useState(currentYear);
+  const [monthFrom, setMonthFrom] = useState(1);
+  const [yearTo, setYearTo] = useState(currentYear);
+  const [monthTo, setMonthTo] = useState(currentMonth);
+  const [data, setData] = useState<ReportTableData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { data: me } = useQuery({
+    queryKey: ["users", "me"],
+    queryFn: () => orpc.users.me({}),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const generate = async () => {
+    setLoading(true);
+    setError(null);
+    setData(null);
+    try {
+      const result = await orpc.pila.generateMyLabReport({
+        yearFrom,
+        monthFrom,
+        yearTo,
+        monthTo,
+      });
+      setData(result as ReportTableData);
+    } catch (err) {
+      console.error("generateMyLabReport error:", err);
+      setError(
+        err instanceof Error ? err.message : "Error al generar el informe",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Mi Laboratorio — Informe Personalizado</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Informe con los reportes enviados o revisados de tu laboratorio para
+          el rango que elijas. Solo se incluyen reportes en estado{" "}
+          <strong>Enviado</strong> o <strong>Revisado</strong>.
+        </p>
+
+        <div className="flex items-end gap-4 flex-wrap">
+          <div className="space-y-1">
+            <Label>Desde — Año</Label>
+            <Select
+              value={String(yearFrom)}
+              onValueChange={(v) => setYearFrom(Number(v))}
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEARS.map((y) => (
+                  <SelectItem key={y} value={String(y)}>
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Desde — Mes</Label>
+            <Select
+              value={String(monthFrom)}
+              onValueChange={(v) => setMonthFrom(Number(v))}
+            >
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((name, idx) => (
+                  <SelectItem key={name} value={String(idx + 1)}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Hasta — Año</Label>
+            <Select
+              value={String(yearTo)}
+              onValueChange={(v) => setYearTo(Number(v))}
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEARS.map((y) => (
+                  <SelectItem key={y} value={String(y)}>
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Hasta — Mes</Label>
+            <Select
+              value={String(monthTo)}
+              onValueChange={(v) => setMonthTo(Number(v))}
+            >
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((name, idx) => (
+                  <SelectItem key={name} value={String(idx + 1)}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={generate} disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {loading ? "Generando..." : "Generar Informe"}
+          </Button>
+        </div>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {data && (
+          <>
+            <Separator />
+            <ReportTable
+              data={data}
+              showLabName={true}
+              title={`Informe PILA — ${me?.labName ?? "Mi Laboratorio"}`}
+              subtitle={`${MONTHS[monthFrom - 1]} ${yearFrom} — ${MONTHS[monthTo - 1]} ${yearTo}`}
+              highlightLabId={me?.labId ?? undefined}
+              highlightLabName={me?.labName ?? undefined}
+            />
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 // ── Main Page ────────────────────────────────────────────────────
@@ -394,7 +531,6 @@ export const PilaPage = ({ canSubmit }: PilaPageProps) => {
     queryFn: () => orpc.pila.myReports({ year }),
   });
 
-  // Check if current month report is pending (only for reporters)
   const { data: pending } = useQuery({
     queryKey: ["pila", "pendingStatus"],
     queryFn: () => orpc.pila.pendingStatus({}),
@@ -439,7 +575,6 @@ export const PilaPage = ({ canSubmit }: PilaPageProps) => {
         )}
       </div>
 
-      {/* Pending report notification */}
       {showPendingWarning && (
         <Alert className="border-amber-300 bg-amber-50">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
@@ -460,7 +595,6 @@ export const PilaPage = ({ canSubmit }: PilaPageProps) => {
         </Alert>
       )}
 
-      {/* Year filter */}
       <div className="flex items-center gap-3">
         <span className="text-sm font-medium">Año:</span>
         <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
@@ -477,7 +611,6 @@ export const PilaPage = ({ canSubmit }: PilaPageProps) => {
         </Select>
       </div>
 
-      {/* Reports list */}
       <Card>
         <CardHeader>
           <CardTitle>
@@ -552,7 +685,10 @@ export const PilaPage = ({ canSubmit }: PilaPageProps) => {
         </CardContent>
       </Card>
 
-      {/* Published reports (reporters download from here) */}
+      <AnonymousMonthlyReport />
+
+      <MyLabCustomRangeReport />
+
       <PublishedReports />
 
       {canSubmit && (

@@ -109,7 +109,9 @@
       "mcp__plugin_engram_engram__engram_remember",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d,indent=2\\)[:500]\\)\")",
       "Bash(pnpm db:demo *)",
-      "mcp__vercel__get_runtime_logs"
+      "mcp__vercel__get_runtime_logs",
+      "Bash(pnpm exec *)",
+      "Bash(echo \"exit=$?\")"
     ]
   }
 }

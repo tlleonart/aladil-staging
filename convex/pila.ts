@@ -1,10 +1,7 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { mutation, query, type QueryCtx } from "./_generated/server";
-import {
-  requireAuth,
-  requirePermission,
-} from "./authHelpers";
+import { mutation, type QueryCtx, query } from "./_generated/server";
+import { requireAuth, requirePermission } from "./authHelpers";
 import { checkPermission } from "./rbac";
 
 async function getUserLabId(
@@ -25,7 +22,12 @@ async function assertCanAccessReport(
   userId: Id<"users">,
   reportLabId: Id<"labs">,
 ): Promise<void> {
-  const canReadAll = await checkPermission(ctx, userId, "PILA", "pila.read_all");
+  const canReadAll = await checkPermission(
+    ctx,
+    userId,
+    "PILA",
+    "pila.read_all",
+  );
   if (canReadAll) return;
   const userLabId = await getUserLabId(ctx, userId);
   if (userLabId !== reportLabId) {
@@ -39,7 +41,9 @@ async function serializeReport(
   opts: { includeValues?: boolean } = {},
 ) {
   const lab = await ctx.db.get(r.labId);
-  const submittedBy = r.submittedById ? await ctx.db.get(r.submittedById) : null;
+  const submittedBy = r.submittedById
+    ? await ctx.db.get(r.submittedById)
+    : null;
   const reviewedBy = r.reviewedById ? await ctx.db.get(r.reviewedById) : null;
   const valueRows = opts.includeValues
     ? await ctx.db
@@ -83,7 +87,11 @@ async function serializeReport(
       ? { id: lab._id, name: lab.name, countryCode: lab.countryCode }
       : null,
     submittedBy: submittedBy
-      ? { id: submittedBy._id, name: submittedBy.name, email: submittedBy.email }
+      ? {
+          id: submittedBy._id,
+          name: submittedBy.name,
+          email: submittedBy.email,
+        }
       : null,
     reviewedBy: reviewedBy
       ? { id: reviewedBy._id, name: reviewedBy.name, email: reviewedBy.email }
@@ -121,7 +129,8 @@ export const createIndicator = mutation({
       .query("pilaIndicators")
       .withIndex("by_code", (q) => q.eq("code", args.code))
       .unique();
-    if (existing) throw new Error(`Ya existe un indicador con código ${args.code}`);
+    if (existing)
+      throw new Error(`Ya existe un indicador con código ${args.code}`);
     const now = Date.now();
     const id = await ctx.db.insert("pilaIndicators", {
       ...args,
@@ -159,7 +168,8 @@ export const updateIndicator = mutation({
         .query("pilaIndicators")
         .withIndex("by_code", (q) => q.eq("code", data.code as string))
         .unique();
-      if (dup) throw new Error(`Ya existe un indicador con código ${data.code}`);
+      if (dup)
+        throw new Error(`Ya existe un indicador con código ${data.code}`);
     }
     const patch: Record<string, unknown> = { updatedAt: Date.now() };
     for (const [k, v] of Object.entries(data)) {
@@ -269,8 +279,8 @@ export const createReport = mutation({
       await ctx.db.insert("pilaReportValues", {
         reportId,
         indicatorId: v.indicatorId,
-        numerator: v.doesNotReport ? undefined : v.numerator ?? undefined,
-        denominator: v.doesNotReport ? undefined : v.denominator ?? undefined,
+        numerator: v.doesNotReport ? undefined : (v.numerator ?? undefined),
+        denominator: v.doesNotReport ? undefined : (v.denominator ?? undefined),
         doesNotReport: v.doesNotReport ?? false,
       });
     }
@@ -312,8 +322,8 @@ export const updateReport = mutation({
       const payload = {
         reportId: id,
         indicatorId: v.indicatorId,
-        numerator: v.doesNotReport ? undefined : v.numerator ?? undefined,
-        denominator: v.doesNotReport ? undefined : v.denominator ?? undefined,
+        numerator: v.doesNotReport ? undefined : (v.numerator ?? undefined),
+        denominator: v.doesNotReport ? undefined : (v.denominator ?? undefined),
         doesNotReport: v.doesNotReport ?? false,
       };
       if (existing) {
@@ -382,9 +392,7 @@ export const integralStatus = query({
     await requirePermission(ctx, "PILA", "pila.read_own");
     const reports = await ctx.db
       .query("pilaReports")
-      .withIndex("by_year_month", (q) =>
-        q.eq("year", year).eq("month", month),
-      )
+      .withIndex("by_year_month", (q) => q.eq("year", year).eq("month", month))
       .collect();
     const total = reports.length;
     const reviewed = reports.filter((r) => r.status === "REVIEWED").length;
@@ -470,7 +478,9 @@ export const markReviewed = mutation({
     const report = await ctx.db.get(id);
     if (!report) throw new Error("Reporte no encontrado");
     if (report.status === "DRAFT") {
-      throw new Error("Solo se pueden marcar como revisados reportes enviados.");
+      throw new Error(
+        "Solo se pueden marcar como revisados reportes enviados.",
+      );
     }
     await ctx.db.patch(id, {
       status: "REVIEWED",
@@ -500,12 +510,14 @@ export const generateReport = query({
       "pila.read_all",
     );
     if (labId && !canReadAll) {
-      throw new Error("No tiene permiso para generar informes por laboratorio.");
+      throw new Error(
+        "No tiene permiso para generar informes por laboratorio.",
+      );
     }
 
     let reports = await ctx.db.query("pilaReports").collect();
-    reports = reports.filter((r) =>
-      r.status === "SUBMITTED" || r.status === "REVIEWED",
+    reports = reports.filter(
+      (r) => r.status === "SUBMITTED" || r.status === "REVIEWED",
     );
     if (labId) reports = reports.filter((r) => r.labId === labId);
     // date range filter (inclusive)
@@ -553,6 +565,93 @@ export const generateReport = query({
             ? canReadAll
               ? { id: lab._id, name: lab.name, countryCode: lab.countryCode }
               : { id: lab._id, name: "", countryCode: "" }
+            : null,
+          values: valuesSerialized,
+        };
+      }),
+    );
+
+    const indicators = await ctx.db
+      .query("pilaIndicators")
+      .withIndex("by_active_sortOrder", (q) => q.eq("isActive", true))
+      .collect();
+    indicators.sort((a, b) => a.sortOrder - b.sortOrder);
+    return {
+      reports: reportsSerialized,
+      indicators: indicators.map((i) => ({
+        id: i._id,
+        code: i.code,
+        name: i.name,
+        formula: i.formula,
+        numeratorLabel: i.numeratorLabel,
+        denominatorLabel: i.denominatorLabel,
+        considerations: i.considerations ?? null,
+        exclusions: i.exclusions ?? null,
+      })),
+    };
+  },
+});
+
+export const generateMyLabReport = query({
+  args: {
+    yearFrom: v.number(),
+    monthFrom: v.number(),
+    yearTo: v.number(),
+    monthTo: v.number(),
+  },
+  handler: async (ctx, { yearFrom, monthFrom, yearTo, monthTo }) => {
+    const userId = await requirePermission(ctx, "PILA", "pila.read_own");
+    const labId = await getUserLabId(ctx, userId);
+
+    let reports = await ctx.db
+      .query("pilaReports")
+      .withIndex("by_labId_year", (q) => q.eq("labId", labId))
+      .collect();
+    reports = reports.filter(
+      (r) => r.status === "SUBMITTED" || r.status === "REVIEWED",
+    );
+    reports = reports.filter((r) => {
+      const key = r.year * 12 + r.month;
+      const from = yearFrom * 12 + monthFrom;
+      const to = yearTo * 12 + monthTo;
+      return key >= from && key <= to;
+    });
+    reports.sort((a, b) => a.year - b.year || a.month - b.month);
+
+    const lab = await ctx.db.get(labId);
+    const reportsSerialized = await Promise.all(
+      reports.map(async (r) => {
+        const values = await ctx.db
+          .query("pilaReportValues")
+          .withIndex("by_reportId", (q) => q.eq("reportId", r._id))
+          .collect();
+        const valuesSerialized = await Promise.all(
+          values.map(async (v) => {
+            const indicator = await ctx.db.get(v.indicatorId);
+            return {
+              id: v._id,
+              numerator: v.numerator ?? null,
+              denominator: v.denominator ?? null,
+              doesNotReport: v.doesNotReport,
+              indicator: indicator
+                ? {
+                    id: indicator._id,
+                    code: indicator.code,
+                    name: indicator.name,
+                    formula: indicator.formula,
+                    sortOrder: indicator.sortOrder,
+                  }
+                : null,
+            };
+          }),
+        );
+        return {
+          id: r._id,
+          year: r.year,
+          month: r.month,
+          status: r.status,
+          lab: lab
+            ? { id: lab._id, name: lab.name, countryCode: lab.countryCode }
             : null,
           values: valuesSerialized,
         };
