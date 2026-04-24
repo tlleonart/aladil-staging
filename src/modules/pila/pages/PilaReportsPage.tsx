@@ -24,6 +24,7 @@ import {
   useQueryClient,
 } from "@/modules/core/orpc/react";
 import { getErrorMessage } from "@/modules/shared/lib/get-error-message";
+import { ConfirmDialog } from "@/modules/shared/ui";
 import { ReportTable, type ReportTableData } from "../components";
 import { exportPilaPdf } from "../lib/export-pdf";
 
@@ -91,6 +92,7 @@ function MonthlyReport() {
   const [year, setYear] = useState(currentYear);
   const [month, setMonth] = useState(currentMonth);
   const [publishing, setPublishing] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const report = useReportGenerator({
@@ -99,6 +101,23 @@ function MonthlyReport() {
     yearTo: year,
     monthTo: month,
   });
+
+  const { data: allLabs = [] } = useQuery({
+    queryKey: ["labs", "list"],
+    queryFn: () => orpc.labs.list({ limit: 100 }),
+  });
+
+  const missingLabs = (() => {
+    if (!report.data) return [];
+    const presentLabIds = new Set(
+      report.data.reports
+        .map((r) => r.lab?.id)
+        .filter((id): id is string => typeof id === "string"),
+    );
+    return allLabs
+      .filter((l) => l.isActive && !presentLabIds.has(l.id))
+      .map((l) => l.name);
+  })();
 
   const publishMutation = useMutation({
     mutationFn: (data: {
@@ -115,7 +134,7 @@ function MonthlyReport() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const handlePublish = async () => {
+  const doPublish = async () => {
     if (!report.data || report.data.reports.length === 0) return;
     setPublishing(true);
     try {
@@ -131,7 +150,6 @@ function MonthlyReport() {
       // The enriched variant is reserved for analysis and is not published.
       const { blob, filename } = result.standard;
 
-      // Upload via server-side API (backed by Convex Storage)
       const formData = new FormData();
       formData.append("file", blob, filename);
       const uploadRes = await fetch("/api/pila/upload", {
@@ -161,6 +179,15 @@ function MonthlyReport() {
     } finally {
       setPublishing(false);
     }
+  };
+
+  const handlePublish = () => {
+    if (!report.data || report.data.reports.length === 0) return;
+    if (missingLabs.length > 0) {
+      setConfirmOpen(true);
+      return;
+    }
+    void doPublish();
   };
 
   return (
@@ -245,6 +272,23 @@ function MonthlyReport() {
           />
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={(open) => !open && setConfirmOpen(false)}
+        title="Laboratorios sin reporte"
+        description={
+          missingLabs.length === 1
+            ? `El laboratorio ${missingLabs[0]} aún no envió su reporte de ${MONTHS[month - 1]} ${year}. ¿Publicar de todas formas?`
+            : `Los siguientes laboratorios aún no enviaron su reporte de ${MONTHS[month - 1]} ${year}: ${missingLabs.join(", ")}. ¿Publicar de todas formas?`
+        }
+        confirmText="Publicar igual"
+        isLoading={publishing}
+        onConfirm={async () => {
+          setConfirmOpen(false);
+          await doPublish();
+        }}
+      />
     </div>
   );
 }

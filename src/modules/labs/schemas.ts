@@ -11,6 +11,7 @@ export const LabSchema = z.object({
   logoAssetId: z.string().min(1).nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  pilaNumber: z.number().int().nullable().optional(),
 });
 
 export const CreateLabSchema = z.object({

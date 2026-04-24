@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, type QueryCtx, query } from "./_generated/server";
 import { requireAuth, requirePermission } from "./authHelpers";
+import { computePilaLabNumbers } from "./labs";
 import { checkPermission } from "./rbac";
 
 async function getUserLabId(
@@ -529,6 +530,8 @@ export const generateReport = query({
     });
     reports.sort((a, b) => a.year - b.year || a.month - b.month);
 
+    const labNumbers = await computePilaLabNumbers(ctx);
+
     const reportsSerialized = await Promise.all(
       reports.map(async (r) => {
         const lab = await ctx.db.get(r.labId);
@@ -556,6 +559,7 @@ export const generateReport = query({
             };
           }),
         );
+        const pilaNumber = lab ? (labNumbers.get(lab._id) ?? null) : null;
         return {
           id: r._id,
           year: r.year,
@@ -563,8 +567,13 @@ export const generateReport = query({
           status: r.status,
           lab: lab
             ? canReadAll
-              ? { id: lab._id, name: lab.name, countryCode: lab.countryCode }
-              : { id: lab._id, name: "", countryCode: "" }
+              ? {
+                  id: lab._id,
+                  name: lab.name,
+                  countryCode: lab.countryCode,
+                  pilaNumber,
+                }
+              : { id: lab._id, name: "", countryCode: "", pilaNumber }
             : null,
           values: valuesSerialized,
         };
@@ -619,6 +628,9 @@ export const generateMyLabReport = query({
     reports.sort((a, b) => a.year - b.year || a.month - b.month);
 
     const lab = await ctx.db.get(labId);
+    const labNumbers = await computePilaLabNumbers(ctx);
+    const pilaNumber = lab ? (labNumbers.get(lab._id) ?? null) : null;
+
     const reportsSerialized = await Promise.all(
       reports.map(async (r) => {
         const values = await ctx.db
@@ -651,7 +663,12 @@ export const generateMyLabReport = query({
           month: r.month,
           status: r.status,
           lab: lab
-            ? { id: lab._id, name: lab.name, countryCode: lab.countryCode }
+            ? {
+                id: lab._id,
+                name: lab.name,
+                countryCode: lab.countryCode,
+                pilaNumber,
+              }
             : null,
           values: valuesSerialized,
         };

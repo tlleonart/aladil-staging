@@ -232,9 +232,10 @@ function AnonymousMonthlyReport() {
       ];
       const rows = data.reports.map((report, idx) => {
         const isMine = hasMine && report.lab?.id === myLabId;
-        const label = isMine
-          ? (me?.labName ?? `Lab ${idx + 1}`)
-          : `Lab ${idx + 1}`;
+        const pilaNumber = report.lab?.pilaNumber;
+        const stableLabel =
+          pilaNumber != null ? `Lab ${pilaNumber}` : `Lab ${idx + 1}`;
+        const label = isMine ? (me?.labName ?? stableLabel) : stableLabel;
         const mineCol = hasMine ? [isMine ? "Sí" : ""] : [];
         const values = data.indicators.flatMap((ind) => {
           const val = report.values.find((v) => v.indicator.id === ind.id);

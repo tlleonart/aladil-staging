@@ -113,5 +113,10 @@
       "Bash(pnpm exec *)",
       "Bash(echo \"exit=$?\")"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "shadcn",
+    "supabase",
+    "next-devtools"
+  ]
 }

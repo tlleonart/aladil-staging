@@ -44,7 +44,12 @@ interface ReportData {
     id: string;
     year: number;
     month: number;
-    lab?: { id: string; name: string; countryCode: string } | null;
+    lab?: {
+      id: string;
+      name: string;
+      countryCode: string;
+      pilaNumber?: number | null;
+    } | null;
     values: Array<{
       numerator: number | null;
       denominator: number | null;
@@ -132,6 +137,49 @@ function niceMax(value: number): number {
 function formatPct(val: number | null): string {
   if (val == null) return "—";
   return `${val.toFixed(2)}%`;
+}
+
+/**
+ * Sort unique lab IDs from a report set by their stable `pilaNumber`
+ * (ascending), falling back to insertion order for labs without a number.
+ * Returns a `{ labId, pilaNumber }[]` so downstream code can render labels
+ * consistently across months.
+ */
+function orderedLabsWithNumber(
+  reports: ReportData["reports"],
+): Array<{ labId: string; pilaNumber: number | null }> {
+  const seen = new Map<
+    string,
+    { pilaNumber: number | null; firstSeenIdx: number }
+  >();
+  reports.forEach((r, idx) => {
+    const id = r.lab?.id ?? r.id;
+    if (!seen.has(id)) {
+      seen.set(id, {
+        pilaNumber: r.lab?.pilaNumber ?? null,
+        firstSeenIdx: idx,
+      });
+    }
+  });
+  return [...seen.entries()]
+    .sort((a, b) => {
+      const pa = a[1].pilaNumber ?? Number.POSITIVE_INFINITY;
+      const pb = b[1].pilaNumber ?? Number.POSITIVE_INFINITY;
+      if (pa !== pb) return pa - pb;
+      return a[1].firstSeenIdx - b[1].firstSeenIdx;
+    })
+    .map(([labId, meta]) => ({ labId, pilaNumber: meta.pilaNumber }));
+}
+
+function labLabelFor(
+  pilaNumber: number | null,
+  fallbackIdx: number,
+  isHighlighted: boolean,
+  highlightLabName?: string,
+): string {
+  if (isHighlighted && highlightLabName) return highlightLabName;
+  if (pilaNumber != null) return `Lab ${pilaNumber}`;
+  return `Lab ${fallbackIdx + 1}`;
 }
 
 // ── Page components ──────────────────────────────────────────────
@@ -1076,8 +1124,8 @@ function addIndicatorPageAnonymous(
   y += formulaLines.length * 3.5 + 4;
 
   // Bar chart for anonymous data
-  const uniqueLabIds = [...new Set(reports.map((r) => r.lab?.id ?? r.id))];
-  const labEntries = uniqueLabIds.map((labId, idx) => {
+  const ordered = orderedLabsWithNumber(reports);
+  const labEntries = ordered.map(({ labId, pilaNumber }, idx) => {
     const labReports = reports.filter((r) => (r.lab?.id ?? r.id) === labId);
     const values: number[] = [];
     for (const report of labReports) {
@@ -1093,8 +1141,7 @@ function addIndicatorPageAnonymous(
         : null;
     const isHighlighted = highlightLabId === labId;
     return {
-      label:
-        isHighlighted && highlightLabName ? highlightLabName : `Lab ${idx + 1}`,
+      label: labLabelFor(pilaNumber, idx, isHighlighted, highlightLabName),
       pct: avgPct,
       isHighlighted,
     };
@@ -1918,13 +1965,12 @@ function addIndicatorPageAnonymousEnriched(
   }
 
   // Bar chart with Q1/Q3 band
-  const uniqueLabIds = [...new Set(reports.map((r) => r.lab?.id ?? r.id))];
-  const labEntries = uniqueLabIds.map((labId, idx) => {
+  const ordered = orderedLabsWithNumber(reports);
+  const labEntries = ordered.map(({ labId, pilaNumber }, idx) => {
     const avg = computeLabAverage(reports, indicator.id, labId);
     const isHighlighted = highlightLabId === labId;
     return {
-      label:
-        isHighlighted && highlightLabName ? highlightLabName : `Lab ${idx + 1}`,
+      label: labLabelFor(pilaNumber, idx, isHighlighted, highlightLabName),
       pct: avg,
       isHighlighted,
     };

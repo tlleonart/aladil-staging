@@ -1,18 +1,43 @@
 import { v } from "convex/values";
-import type { Doc } from "./_generated/dataModel";
-import { mutation, query, type QueryCtx } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
+import { mutation, type QueryCtx, query } from "./_generated/server";
 import { serializeAsset } from "./assets";
 import { requirePermission } from "./authHelpers";
 
+/**
+ * Stable PILA lab numbering. Ranks labs by Convex `_creationTime` ascending
+ * so "Lab 1" is the earliest-created lab in the system, "Lab 2" the next, and
+ * so on. The rank is global (includes inactive labs) so a number never shifts
+ * when a lab is deactivated or when a month has missing reporters.
+ */
+export async function computePilaLabNumbers(
+  ctx: QueryCtx,
+): Promise<Map<Id<"labs">, number>> {
+  const all = await ctx.db.query("labs").collect();
+  all.sort((a, b) => a._creationTime - b._creationTime);
+  const map = new Map<Id<"labs">, number>();
+  for (let i = 0; i < all.length; i++) {
+    map.set(all[i]._id, i + 1);
+  }
+  return map;
+}
+
 async function withLogo(ctx: QueryCtx, lab: Doc<"labs">) {
-  const logoAsset = lab.logoAssetId
-    ? await ctx.db.get(lab.logoAssetId)
-    : null;
+  const logoAsset = lab.logoAssetId ? await ctx.db.get(lab.logoAssetId) : null;
   return {
     ...lab,
     id: lab._id,
     logoAsset: await serializeAsset(ctx, logoAsset),
   };
+}
+
+async function withLogoAndNumber(
+  ctx: QueryCtx,
+  lab: Doc<"labs">,
+  numbers: Map<Id<"labs">, number>,
+) {
+  const base = await withLogo(ctx, lab);
+  return { ...base, pilaNumber: numbers.get(lab._id) ?? null };
 }
 
 async function withLogoAndExecs(ctx: QueryCtx, lab: Doc<"labs">) {
@@ -62,9 +87,12 @@ export const list = query({
     if (countryCode) {
       rows = rows.filter((l) => l.countryCode === countryCode);
     }
-    rows.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+    rows.sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name),
+    );
     const page = rows.slice(0, limit);
-    return Promise.all(page.map((l) => withLogo(ctx, l)));
+    const numbers = await computePilaLabNumbers(ctx);
+    return Promise.all(page.map((l) => withLogoAndNumber(ctx, l, numbers)));
   },
 });
 
@@ -74,7 +102,9 @@ export const getById = query({
     await requirePermission(ctx, "LABS", "labs.read");
     const lab = await ctx.db.get(id);
     if (!lab) throw new Error("Lab not found");
-    return await withLogoAndExecs(ctx, lab);
+    const numbers = await computePilaLabNumbers(ctx);
+    const base = await withLogoAndExecs(ctx, lab);
+    return { ...base, pilaNumber: numbers.get(lab._id) ?? null };
   },
 });
 

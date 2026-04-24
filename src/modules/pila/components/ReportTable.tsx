@@ -30,7 +30,12 @@ export interface ReportTableData {
     id: string;
     year: number;
     month: number;
-    lab?: { id: string; name: string; countryCode: string } | null;
+    lab?: {
+      id: string;
+      name: string;
+      countryCode: string;
+      pilaNumber?: number | null;
+    } | null;
     values: Array<{
       numerator: number | null;
       denominator: number | null;
@@ -110,7 +115,7 @@ export function ReportTable({
     const hasHighlight = !!highlightLabId;
     const headers = [
       "Período",
-      ...(showLabName ? ["Laboratorio"] : []),
+      "Laboratorio",
       ...(hasHighlight ? ["Mi lab"] : []),
       ...indicators.flatMap((ind) => [
         `${ind.code} Num`,
@@ -121,7 +126,11 @@ export function ReportTable({
 
     const rows = reports.map((report) => {
       const period = `${MONTHS[report.month - 1]} ${report.year}`;
-      const labName = showLabName ? [report.lab?.name ?? ""] : [];
+      const labLabel = showLabName
+        ? (report.lab?.name ?? "")
+        : report.lab?.pilaNumber != null
+          ? `Lab ${report.lab.pilaNumber}`
+          : "";
       const mine = hasHighlight
         ? [report.lab?.id === highlightLabId ? "Sí" : ""]
         : [];
@@ -135,7 +144,7 @@ export function ReportTable({
             : "";
         return [num?.toString() ?? "", den?.toString() ?? "", pct];
       });
-      return [period, ...labName, ...mine, ...values];
+      return [period, labLabel, ...mine, ...values];
     });
 
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
@@ -195,11 +204,9 @@ export function ReportTable({
               <th className="border border-gray-200 px-2 py-2 text-left">
                 Período
               </th>
-              {showLabName && (
-                <th className="border border-gray-200 px-2 py-2 text-left">
-                  Laboratorio
-                </th>
-              )}
+              <th className="border border-gray-200 px-2 py-2 text-left">
+                Laboratorio
+              </th>
               {data.indicators.map((ind) => (
                 <th
                   key={ind.id}
@@ -215,9 +222,7 @@ export function ReportTable({
             </tr>
             <tr className="bg-gray-50">
               <th className="border border-gray-200 px-2 py-1" />
-              {showLabName && (
-                <th className="border border-gray-200 px-2 py-1" />
-              )}
+              <th className="border border-gray-200 px-2 py-1" />
               {data.indicators.map((ind) => (
                 <Fragment key={ind.id}>
                   <th className="border border-gray-200 px-1 py-1 text-[10px] font-normal">
@@ -237,6 +242,12 @@ export function ReportTable({
             {data.reports.map((report) => {
               const isMine =
                 highlightLabId && report.lab?.id === highlightLabId;
+              const pilaNumber = report.lab?.pilaNumber;
+              const labCell = showLabName
+                ? (report.lab?.name ?? "—")
+                : pilaNumber != null
+                  ? `Lab ${pilaNumber}`
+                  : "—";
               return (
                 <tr
                   key={report.id}
@@ -252,11 +263,9 @@ export function ReportTable({
                     )}
                     {MONTHS[report.month - 1]} {report.year}
                   </td>
-                  {showLabName && (
-                    <td className="border border-gray-200 px-2 py-2 whitespace-nowrap">
-                      {report.lab?.name}
-                    </td>
-                  )}
+                  <td className="border border-gray-200 px-2 py-2 whitespace-nowrap">
+                    {labCell}
+                  </td>
                   {data.indicators.map((ind) => {
                     const val = report.values.find(
                       (v) => v.indicator.id === ind.id,

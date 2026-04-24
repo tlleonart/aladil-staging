@@ -30,6 +30,20 @@ export function getLabsColumns({
 }: LabsColumnsProps): ColumnDef<Lab>[] {
   return [
     {
+      accessorKey: "pilaNumber",
+      header: "Nº PILA",
+      cell: ({ row }) => {
+        const n = row.original.pilaNumber;
+        return n != null ? (
+          <span className="font-mono text-xs font-semibold text-blue-700">
+            Lab {n}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
+      },
+    },
+    {
       accessorKey: "name",
       header: "Nombre",
       cell: ({ row }) => (
